@@ -1,0 +1,49 @@
+name: Increment Version on Merge
+on: 
+  pull_request:
+    types: [closed]
+
+jobs:
+  increment-version:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    
+    runs-on: [ubuntu-20.04]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Increment the version
+        uses: actions/github-script@v4
+        with: 
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const util = require('util');
+            const exec = util.promisify(require('child_process').exec);
+
+            let newTag;
+            try {
+              ({ stdout: tag } = await exec(`git describe --tags --abbrev=0`));
+
+              tag = tag.replace('\n', '').trim();
+              core.info(`The latest tag is: ${tag}`);
+              const majorMinorPatch = tag.split('.');
+              const patch = parseInt(majorMinorPatch[2]) + 1;
+              newTag = `${majorMinorPatch[0]}.${majorMinorPatch[1]}.${patch}`
+              core.info(`The new tag is: ${newTag}`);
+            }
+            catch (error) {
+              newTag = 'v1.0.0';
+              core.info('An error occurred getting the tags for the repo.  It most likely does not have any tags to use. Defaulting to v1.0.0.');
+              core.info(error);
+            }
+
+            core.info(`Pushing tag '${newTag}' to the repository...`)
+            await github.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${newTag}`,
+              sha: context.sha
+            });      

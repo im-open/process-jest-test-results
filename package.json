@@ -1,0 +1,30 @@
+{
+  "name": "custom-action-template",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm ci && esbuild ./main.js --bundle --platform=node --outfile=dist/index.js ",
+    "bundle": "esbuild ./main.js --bundle --platform=node --outfile=dist/index.js",
+    "format": "prettier --write **/*.js",
+    "format-check": "prettier --check **/*.js"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run build && npm run format",
+      "pre-push": "npm run format-check"
+    }
+  },
+  "keywords": [],
+  "author": "wtw",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/core": "^1.2.7"
+  },
+  "devDependencies": {
+    "esbuild": "^0.12.8",
+    "husky": "^4.3.8",
+    "install": "^0.13.0",
+    "prettier": "^2.3.0"
+  }
+}

@@ -1,0 +1,19 @@
+name: 'JavaScript Action Template'
+
+description: 'Add description here'
+
+inputs:
+  input-1:
+    description: 'Add a description here'
+    required: true
+  input-2:
+    description: 'Add a description here'
+    required: false
+
+outputs:
+  output-1:
+    description: 'Add a description here'
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'

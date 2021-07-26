@@ -1,0 +1,27 @@
+name: Build and Test
+on: 
+  pull_request:
+    paths-ignore:
+      - '**.md'
+jobs:
+  build:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node.js 14
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - name: Build
+        run: npm run build
+      - name: Format
+        run: npm run format
+      - name: Check for unstaged changes
+        if: runner.os != 'windows'
+        run: ./check-for-unstaged-changes.sh
