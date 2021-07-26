@@ -1,11 +1,11 @@
 {
-  "name": "custom-action-template",
+  "name": "process-jest-test-results",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npm ci && esbuild ./main.js --bundle --platform=node --outfile=dist/index.js ",
-    "bundle": "esbuild ./main.js --bundle --platform=node --outfile=dist/index.js",
+    "build": "npm ci && esbuild ./src/main.js --bundle --platform=node --outfile=dist/index.js ",
+    "bundle": "esbuild ./src/main.js --bundle --platform=node --outfile=dist/index.js",
     "format": "prettier --write **/*.js",
     "format-check": "prettier --check **/*.js"
   },
@@ -19,7 +19,10 @@
   "author": "wtw",
   "license": "ISC",
   "dependencies": {
-    "@actions/core": "^1.2.7"
+    "@actions/core": "^1.2.7",
+    "@actions/github": "^5.0.0",
+    "date-fns": "^2.22.1",
+    "date-fns-tz": "^1.1.4"
   },
   "devDependencies": {
     "esbuild": "^0.12.8",
