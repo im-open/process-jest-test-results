@@ -5595,7 +5595,7 @@ var require_github2 = __commonJS({
         const response = await octokit.rest.checks.create({
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
-          name: reportName2.toLowerCase(),
+          name: `status check - ${reportName2.toLowerCase()}`,
           head_sha: git_sha,
           status: 'completed',
           conclusion,
