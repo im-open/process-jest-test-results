@@ -1,18 +1,40 @@
-name: 'JavaScript Action Template'
+name: 'process-jest-test-results'
 
-description: 'Add description here'
+description: |
+  Action that parses a jest json results file and creates a status check or pr comment with the results.
+  Tests are not run as part of these action.
+  The results can be seen on the workflow run or PR.
 
 inputs:
-  input-1:
-    description: 'Add a description here'
+  github-token:
+    description: 'Token used to interact with the repository.  Generally secrets.GITHUB_TOKEN.'
     required: true
-  input-2:
-    description: 'Add a description here'
+  results-file:
+    description: 'The json test results file output by jest.'
+    required: true
+  report-name:
+    description: 'The desired name of the report that is shown on the PR Comment and inside the Status Check.'
+    required: true
+    default: Jest Test Results
+  ignore-test-failures:
+    description: 'When set to true the status check is set to neutral when there are test failures and it will not block pull requests.'
+    required: false
+    default: 'false'
+  create-status-check:
+    description: 'Flag indicating whether a status check with test results should be generated.'
+    required: true
+    default: 'true'
+  create-pr-comment:
+    description: 'Flag indicating whether a PR comment with test results should be generated.'
+    required: true
+    default: 'true'
+  timezone:
+    description: 'IANA time zone name (e.g. America/Denver) to display dates in.  If timezone is not provided, dates will be shown in UTC.'
     required: false
 
 outputs:
-  output-1:
-    description: 'Add a description here'
+  test-outcome:
+    description: 'Test outcome based on presence of failing tests: Failed|Passed.  If exceptions are thrown or if it exits early because of argument errors, this is set to Failed.'
 
 runs:
   using: 'node12'
