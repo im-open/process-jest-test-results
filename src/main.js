@@ -23,7 +23,7 @@ async function run() {
   try {
     const resultsJson = await readJsonResultsFromFile(resultsFile);
     if (!resultsJson) {
-      core.setOutput('coverage-outcome', 'Failed');
+      core.setOutput('test-outcome', 'Failed');
       return;
     }
 
