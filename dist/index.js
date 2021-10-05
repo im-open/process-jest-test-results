@@ -5583,6 +5583,7 @@ var require_github2 = __commonJS({
   'src/github.js'(exports2, module2) {
     var core2 = require_core();
     var github = require_github();
+    var markupPrefix = '<!-- im-open/process-jest-test-results -->';
     async function createStatusCheck2(repoToken, markupData, conclusion, reportName2) {
       try {
         core2.info(`Creating Status check for ${reportName2}...`);
@@ -5614,26 +5615,66 @@ var require_github2 = __commonJS({
         core2.setFailed(error.message);
       }
     }
-    async function createPrComment2(repoToken, markupData) {
+    async function lookForExistingComment(octokit) {
+      const commentsResponse = await octokit.rest.issues.listComments({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        issue_number: github.context.payload.pull_request.number
+      });
+      if (commentsResponse.status !== 200) {
+        core2.info(`Failed to list PR comments. Error code: ${commentsResponse.status}.  Will create new comment instead.`);
+        return null;
+      }
+      const existingComment = commentsResponse.data.find(c => c.body.startsWith(markupPrefix));
+      if (!existingComment) {
+        core2.info('An existing jest test results comment was not found, create a new one instead.');
+      }
+      return existingComment ? existingComment.id : null;
+    }
+    async function createPrComment2(repoToken, markupData, updateCommentIfOneExists2) {
       try {
         if (github.context.eventName != 'pull_request') {
-          core2.info('This event was not triggered by a pull_request.  No comment will be created.');
+          core2.info('This event was not triggered by a pull_request.  No comment will be created or updated.');
+          return;
         }
-        core2.info(`Creating PR Comment...`);
         const octokit = github.getOctokit(repoToken);
-        const response = await octokit.rest.issues.createComment({
-          owner: github.context.repo.owner,
-          repo: github.context.repo.repo,
-          issue_number: github.context.payload.pull_request.number,
-          body: markupData
-        });
-        if (response.status !== 201) {
-          core2.setFailed(`Failed to create PR comment. Error code: ${response.status}`);
+        let existingCommentId = null;
+        if (updateCommentIfOneExists2) {
+          core2.info('Checking for existing comment on PR....');
+          existingCommentId = await lookForExistingComment(octokit);
+        }
+        ``;
+        let response;
+        let success;
+        if (existingCommentId) {
+          core2.info(`Updating existing PR #${existingCommentId} comment...`);
+          response = await octokit.rest.issues.updateComment({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            body: `${markupPrefix}
+${markupData}`,
+            comment_id: existingCommentId
+          });
+          success = response.status === 200;
         } else {
-          core2.info(`Created PR comment: ${response.data.id} with response status ${response.status}`);
+          core2.info(`Creating a new PR comment...`);
+          response = await octokit.rest.issues.createComment({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            body: `${markupPrefix}
+${markupData}`,
+            issue_number: github.context.payload.pull_request.number
+          });
+          success = response.status === 201;
+        }
+        let action = existingCommentId ? 'create' : 'update';
+        if (success) {
+          core2.info(`PR comment was ${action}d.  ID: ${response.data.id}.`);
+        } else {
+          core2.setFailed(`Failed to ${action} PR comment. Error code: ${response.status}.`);
         }
       } catch (error) {
-        core2.setFailed(`An error occurred trying to create the PR comment: ${error}`);
+        core2.setFailed(`An error occurred trying to create or update the PR comment: ${error}`);
       }
     }
     module2.exports = {
@@ -8667,20 +8708,17 @@ var core = require_core();
 var { readJsonResultsFromFile, areThereAnyFailingTests } = require_utils2();
 var { createStatusCheck, createPrComment } = require_github2();
 var { getMarkupForJson } = require_markup();
-var token = core.getInput('github-token');
-var resultsFile = core.getInput('results-file');
+var requiredArgOptions = {
+  required: true,
+  trimWhitespace: true
+};
+var token = core.getInput('github-token', requiredArgOptions);
+var resultsFile = core.getInput('results-file', requiredArgOptions);
 var ignoreTestFailures = core.getInput('ignore-test-failures') == 'true';
 var shouldCreateStatusCheck = core.getInput('create-status-check') == 'true';
 var shouldCreatePRComment = core.getInput('create-pr-comment') == 'true';
+var updateCommentIfOneExists = core.getInput('update-comment-if-one-exists') == 'true';
 var reportName = core.getInput('report-name');
-if (!resultsFile || resultsFile.length === 0) {
-  core.setFailed('The results-file argument is required.');
-  return;
-}
-if (!token || token.length === 0) {
-  core.setFailed('The github-token argument is required.');
-  return;
-}
 async function run() {
   try {
     const resultsJson = await readJsonResultsFromFile(resultsFile);
@@ -8698,7 +8736,7 @@ async function run() {
       await createStatusCheck(token, markupData, conclusion, reportName);
     }
     if (shouldCreatePRComment) {
-      await createPrComment(token, markupData);
+      await createPrComment(token, markupData, updateCommentIfOneExists);
     }
     core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
   } catch (error) {
