@@ -25,7 +25,11 @@ inputs:
     required: true
     default: 'true'
   create-pr-comment:
-    description: 'Flag indicating whether a PR comment with test results should be generated.'
+    description: 'Flag indicating whether a PR comment with test results should be generated.  When `true` the default behavior is to update an existing comment if one exists.'
+    required: true
+    default: 'true'
+  update-comment-if-one-exists:
+    description: 'When `create-pr-comment` is true, this flag determines whether a new comment is created or if the action updates an existing comment if one is found which is the default behavior.'
     required: true
     default: 'true'
   timezone:

@@ -3,21 +3,18 @@ const { readJsonResultsFromFile, areThereAnyFailingTests } = require('./utils');
 const { createStatusCheck, createPrComment } = require('./github');
 const { getMarkupForJson } = require('./markup');
 
-const token = core.getInput('github-token');
-const resultsFile = core.getInput('results-file');
+const requiredArgOptions = {
+  required: true,
+  trimWhitespace: true
+};
+
+const token = core.getInput('github-token', requiredArgOptions);
+const resultsFile = core.getInput('results-file', requiredArgOptions);
 const ignoreTestFailures = core.getInput('ignore-test-failures') == 'true';
 const shouldCreateStatusCheck = core.getInput('create-status-check') == 'true';
 const shouldCreatePRComment = core.getInput('create-pr-comment') == 'true';
+const updateCommentIfOneExists = core.getInput('update-comment-if-one-exists') == 'true';
 const reportName = core.getInput('report-name');
-
-if (!resultsFile || resultsFile.length === 0) {
-  core.setFailed('The results-file argument is required.');
-  return;
-}
-if (!token || token.length === 0) {
-  core.setFailed('The github-token argument is required.');
-  return;
-}
 
 async function run() {
   try {
@@ -40,7 +37,7 @@ async function run() {
       await createStatusCheck(token, markupData, conclusion, reportName);
     }
     if (shouldCreatePRComment) {
-      await createPrComment(token, markupData);
+      await createPrComment(token, markupData, updateCommentIfOneExists);
     }
 
     core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
