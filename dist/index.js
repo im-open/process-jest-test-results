@@ -5616,17 +5616,45 @@ var require_github2 = __commonJS({
       }
     }
     async function lookForExistingComment(octokit) {
-      const commentsResponse = await octokit.rest.issues.listComments({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        issue_number: github.context.payload.pull_request.number
-      });
-      if (commentsResponse.status !== 200) {
-        core2.info(`Failed to list PR comments. Error code: ${commentsResponse.status}.  Will create new comment instead.`);
-        return null;
+      let hasMoreComments = true;
+      let page = 1;
+      const maxResultsPerPage = 30;
+      let prComments = [];
+      while (hasMoreComments) {
+        const commentsResponse = await octokit.rest.issues.listComments({
+          owner: github.context.repo.owner,
+          repo: github.context.repo.repo,
+          issue_number: github.context.payload.pull_request.number,
+          per_page: maxResultsPerPage,
+          page
+        });
+        if (commentsResponse.status == 200) {
+          if (commentsResponse.data) {
+            if (commentsResponse.data.length < maxResultsPerPage) {
+              hasMoreComments = false;
+            } else {
+              page += 1;
+            }
+            for (let index = 0; index < commentsResponse.data.length; index++) {
+              const comment = commentsResponse.data[index];
+              prComments.push({
+                id: comment.id,
+                body: comment.body
+              });
+            }
+          }
+        } else {
+          core2.info(
+            `Failed to list PR comments. Error code: ${commentsResponse.status}.  Will create new comment instead.`
+          );
+          return null;
+        }
       }
-      const existingComment = commentsResponse.data.find(c => c.body.startsWith(markupPrefix));
-      if (!existingComment) {
+      core2.info(`Finished getting comments for PR #${github.context.payload.pull_request.number}.`);
+      const existingComment = prComments.find(c => c.body.startsWith(markupPrefix));
+      if (existingComment) {
+        core2.info(`An existing jest test results comment was found.`);
+      } else {
         core2.info('An existing jest test results comment was not found, create a new one instead.');
       }
       return existingComment ? existingComment.id : null;

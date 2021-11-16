@@ -75,7 +75,7 @@ jobs:
 
       - name: Process jest results with default
         if: always()
-        uses: im-open/process-jest-test-results@v2.0.0
+        uses: im-open/process-jest-test-results@v2.0.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-file: 'src/ProjectWithJestTests/jest-results.json
@@ -96,7 +96,7 @@ jobs:
       
       - name: Process jest results
         id: process-jest
-        uses: im-open/process-jest-test-results@v1.0.1
+        uses: im-open/process-jest-test-results@v2.0.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-file: 'jest.json'
