@@ -4,15 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npm ci && esbuild ./src/main.js --bundle --platform=node --outfile=dist/index.js ",
+    "build": "npm ci && esbuild ./src/main.js --bundle --platform=node --outfile=dist/index.js && npm run format",
     "bundle": "esbuild ./src/main.js --bundle --platform=node --outfile=dist/index.js",
     "format": "prettier --write **/*.js",
     "format-check": "prettier --check **/*.js"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run build && npm run format",
-      "pre-push": "npm run format-check"
+      "pre-commit": "npm run build"
     }
   },
   "keywords": [],
