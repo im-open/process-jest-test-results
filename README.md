@@ -5,15 +5,23 @@ This action works in conjunction with another step that runs `jest test --json -
 This action does not run the Jest tests itself and it can only process one results file at a time.
 
 - [process-jest-test-results](#process-jest-test-results)
-  * [Failures](#failures)
-  * [Limitations](#limitations)
-  * [Action Outputs](#action-outputs)
-  * [Inputs](#inputs)
-  * [Outputs](#outputs)
-  * [Usage Examples](#usage-examples)
-  * [Recompiling](#recompiling)
-  * [Code of Conduct](#code-of-conduct)
-  * [License](#license)
+  - [Failures](#failures)
+  - [Limitations](#limitations)
+  - [Action Outputs](#action-outputs)
+    - [Pull Request Comment](#pull-request-comment)
+    - [Pull Request Status Check](#pull-request-status-check)
+    - [Workflow Run](#workflow-run)
+    - [Failed Test Details](#failed-test-details)
+  - [Inputs](#inputs)
+  - [Outputs](#outputs)
+  - [Usage Examples](#usage-examples)
+    - [Using the defaults](#using-the-defaults)
+    - [Specifying additional behavior](#specifying-additional-behavior)
+  - [Contributing](#contributing)
+    - [Recompiling](#recompiling)
+    - [Incrementing the Version](#incrementing-the-version)
+  - [Code of Conduct](#code-of-conduct)
+  - [License](#license)
   
 ## Failures
 The status check can be seen as a new item on the workflow run, a PR comment or on the PR Status Check section.  If the test results contain failures, the status check will be marked as failed. Having the status check marked as failed will prevent PRs from being merged. If this status check behavior is not desired, the `ignore-test-failures` input can be set and the outcome will be marked as neutral if test failures are detected. The status badge that is shown in the comment or status check body will still indicate it was a failure though.
@@ -75,7 +83,7 @@ jobs:
 
       - name: Process jest results with default
         if: always()
-        uses: im-open/process-jest-test-results@v2.0.1
+        uses: im-open/process-jest-test-results@v2.0.2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-file: 'src/ProjectWithJestTests/jest-results.json
@@ -96,7 +104,7 @@ jobs:
       
       - name: Process jest results
         id: process-jest
-        uses: im-open/process-jest-test-results@v2.0.1
+        uses: im-open/process-jest-test-results@v2.0.2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-file: 'jest.json'
@@ -116,7 +124,15 @@ jobs:
           exit 1
 ```
 
-## Recompiling
+## Contributing
+
+When creating new PRs please ensure:
+1. The action has been recompiled.  See the [Recompiling](#recompiling) section below for more details.
+2. For major or minor changes, at least one of the commit messages contains the appropriate `+semver:` keywords listed under [Incrementing the Version](#incrementing-the-version).
+3. The `README.md` example has been updated with the new version.  See [Incrementing the Version](#incrementing-the-version).
+4. The action code does not contain sensitive information.
+
+### Recompiling
 
 If changes are made to the action's code in this repository, or its dependencies, you will need to re-compile the action.
 
@@ -131,7 +147,7 @@ npm run bundle
 These commands utilize [esbuild](https://esbuild.github.io/getting-started/#bundling-for-node) to bundle the action and
 its dependencies into a single file located in the `dist` folder.
 
-## Incrementing the Version
+### Incrementing the Version
 
 This action uses [git-version-lite] to examine commit messages to determine whether to perform a major, minor or patch increment on merge.  The following table provides the fragment that should be included in a commit message to active different increment strategies.
 | Increment Type | Commit Message Fragment                     |
