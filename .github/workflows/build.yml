@@ -1,5 +1,9 @@
-name: Build and Test
-on: 
+name: Build and Check for Changes
+on:
+  # This workflow uses the pull_request trigger which prevents write permissions and secrets
+  # access to the target repository from public forks.  This should remain as a pull_request
+  # trigger because checkout, build, format and checking for changes do not need elevated
+  # permissions to the repository.  The reduced permissions for public forks is adequate.
   pull_request:
     paths-ignore:
       - '**.md'
