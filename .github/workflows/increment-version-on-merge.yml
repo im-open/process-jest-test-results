@@ -15,6 +15,12 @@ on:
   #      reviewed, approved by a CODEOWNER and merged
   pull_request_target:
     types: [closed]
+    paths:
+      - 'dist/**'
+      - 'src/**'
+      - 'action.yml'
+      - 'package.json'
+      - 'package-lock.json'
 
 jobs:
   increment-version:
@@ -28,7 +34,7 @@ jobs:
       # on a pull_request_target.  But we need to be extra careful not to trigger any script
       # that may operate on PR controlled contents like in the case of npm install.
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: main
           fetch-depth: 0
@@ -37,7 +43,7 @@ jobs:
       # See https://github.com/im-open/git-version-lite for more details around how to increment
       # major/minor/patch through commit messages
       - name: Increment the version
-        uses: im-open/git-version-lite@v2.0.6
+        uses: im-open/git-version-lite@v2.1.0
         with:
           create-ref: true
           github-token: ${{ secrets.GITHUB_TOKEN }}

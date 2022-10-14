@@ -75,7 +75,7 @@ jobs:
   ci:
     runs-on: [ubuntu-20.04]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: jest test with Coverage
         continue-on-error: true
@@ -96,7 +96,7 @@ jobs:
   advanced-ci:
     runs-on: [ubuntu-20.04]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: jest test with results file
         continue-on-error: true
