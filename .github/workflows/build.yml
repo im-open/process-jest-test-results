@@ -5,8 +5,10 @@ on:
   # trigger because checkout, build, format and checking for changes do not need elevated
   # permissions to the repository.  The reduced permissions for public forks is adequate.
   pull_request:
-    paths-ignore:
-      - '**.md'
+    # Don't include any specific paths here so we always get a build that produces a status
+    # check that our Branch Protection Rules can use.  Having a status check also allows us
+    # to require that branches be up to date before they are merged.
+
 jobs:
   build:
     runs-on: ${{ matrix.operating-system }}
@@ -17,11 +19,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Node.js 14
-        uses: actions/setup-node@v1
+        uses: actions/checkout@v3
+      - name: Setup Node.js 16
+        uses: actions/setup-node@v3
         with:
-          node-version: 14.x
+          node-version: 16.x
       - name: Build
         run: npm run build
       - name: Format

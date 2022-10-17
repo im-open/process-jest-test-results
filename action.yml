@@ -41,5 +41,5 @@ outputs:
     description: 'Test outcome based on presence of failing tests: Failed|Passed.  If exceptions are thrown or if it exits early because of argument errors, this is set to Failed.'
 
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
