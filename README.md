@@ -84,6 +84,7 @@ jobs:
 
       - name: Process jest results with default
         if: always()
+        # You may also reference just the major or major.minor version
         uses: im-open/process-jest-test-results@v2.1.2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
