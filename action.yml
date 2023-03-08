@@ -1,4 +1,4 @@
-name: 'process-jest-test-results'
+name: process-jest-test-results
 
 description: |
   Action that parses a jest json results file and creates a status check or pr comment with the results.
