@@ -1,5 +1,5 @@
 name: Build and Review PR
-run-name: Build and Review PR #${{ github.event.pull_request.number }}
+run-name: 'Build and Review PR #${{ github.event.pull_request.number }}'
 
 on:
   # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
