@@ -1,5 +1,5 @@
 name: Increment Version on Merge
-run-name: 'Increment Version for PR #${{ github.event.pull_request.number }}'
+run-name: "${{ github.event.pull_request.merged && 'Increment version for' || 'Closing' }} PR #${{ github.event.pull_request.number }}"
 on:
   # https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
   # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
