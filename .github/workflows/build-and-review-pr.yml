@@ -1,0 +1,62 @@
+name: Build and Review PR
+run-name: 'Build and Review PR #${{ github.event.pull_request.number }}'
+
+on:
+  # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+  #
+  # This workflow uses the pull_request trigger which prevents write permissions on the
+  # GH_TOKEN and secrets access from public forks.  This should remain as a pull_request
+  # trigger to minimize the access public forks have in the repository.  The reduced
+  # permissions are adequate but do mean that re-compiles and readme changes will have to be
+  # made manually by the PR author.  These auto-updates could be done by this workflow
+  # for branches but in order to re-trigger a PR build (which is needed for status checks),
+  # we would make the commits with a different user and their PAT.  To minimize exposure
+  # and complication we will request those changes be manually made by the PR author.
+  pull_request:
+    types: [opened, synchronize, reopened]
+  # paths:
+  #   Do not include specific paths here.  We always want this build to run and produce a
+  #   status check which are branch protection rules can use.  If this is skipped because of
+  #   path filtering, a status check will not be created and we won't be able to merge the PR
+  #   without disabling that requirement.  If we have a status check that is always produced,
+  #   we can also use that to require all branches be up to date before they are merged.
+
+jobs:
+  build-and-review-pr:
+    # This reusable workflow will check to see if an action's source code has changed based on
+    # whether the PR includes files that match the files-with-code arg or are in one of the
+    # dirs-with-code directories.  If there are source code changes, this reusable workflow
+    # will then run the action's build (if one was provided) and update the README.md with the
+    # the latest version of the action.  If those two steps result in any changes that need to
+    # be committed, the workflow will fail because the PR needs some updates.  Instructions for
+    # updating the PR will be available in the build log, the workflow summary and as a PR
+    # comment if the PR came from a branch (not a fork).
+    # This workflow assumes:
+    #  - The main README.md is at the root of the repo
+    #  - The README contains a contribution guidelines and usage examples section
+    uses: im-open/.github/.github/workflows/reusable-build-and-review-pr.yml@v1
+    with:
+      action-name: ${{ github.repository }}
+      default-branch: main
+      readme-name: 'README.md'
+
+      # The id of the contribution guidelines section of the README.md
+      readme-contribution-id: '#contributing'
+
+      # The id of the usage examples section of the README.md
+      readme-examples-id: '#usage-examples'
+
+      # The files that contain source code for the action.  Only files that affect the action's execution
+      # should be included like action.yml or package.json.  Do not include files like README.md or .gitignore.
+      # Files do not need to be explicitly provided here if they fall under one of the dirs in dirs-with-code.
+      # ** This value must match the same files-with-code argument specified in increment-version-on-merge.yml.
+      files-with-code: 'action.yml,package.json,package-lock.json'
+
+      # The directories that contain source code for the action.  Only dirs with files that affect the action's
+      # execution should be included like src or dist.  Do not include dirs like .github or node_modules.
+      # ** This value must match the same dirs-with-code argument specified in increment-version-on-merge.yml.
+      dirs-with-code: 'src,dist'
+
+      # The npm script to run to build the action.  This is typically 'npm run build' if the
+      # action needs to be compiled.  For composite-run-steps actions this is typically empty.
+      build-command: 'npm run build'
