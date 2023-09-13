@@ -1,3 +1,7 @@
+# Deprecated :warning:
+
+This action is superseded by https://github.com/im-open/publish-unit-test-result-action.
+
 # process-jest-test-results
 
 This action works in conjunction with another step that runs `jest test --json --outputFile=jest-results.json` and it parses the results from the outputted file.  This action will take the parsed results and create a Status Check or PR Comment depending on the flags set.
