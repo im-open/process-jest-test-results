@@ -86,6 +86,12 @@ For failed test runs you can expand each failed test and view more details about
 jobs:
   ci:
     runs-on: [ubuntu-20.04]
+    permissions:
+      contents: read
+      checks: write
+      statuses: write
+      pull-requests: write
+
     steps:
       - uses: actions/checkout@v3
 
