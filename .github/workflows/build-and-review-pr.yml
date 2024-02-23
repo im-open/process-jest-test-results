@@ -60,3 +60,293 @@ jobs:
       # The npm script to run to build the action.  This is typically 'npm run build' if the
       # action needs to be compiled.  For composite-run-steps actions this is typically empty.
       build-command: 'npm run build'
+  
+  unit-tests:
+    runs-on: ubuntu-latest
+    env:
+      FAILING_MD_FILE: './test/files/expected-results-for-failing-tests.md'
+      PASSING_MD_FILE: './test/files/expected-results-for-passing-tests.md'
+      NO_TESTS_MD_FILE: './test/files/expected-results-for-no-tests.md'
+
+    steps:
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                                    SETUP                                                    '
+        run: echo ""
+
+      - name: Setup - Checkout the action
+        uses: actions/checkout@v4
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                         TEST 1 - MISSING TOKEN INPUT                                        '
+        run: echo ""
+
+      - name: 1 - When process-jest-test-results is called with a missing github-token input
+        id: missing-github-token
+        if: always()
+        continue-on-error: true # This is needed because we expect the step to fail but we need it to "pass" in order for the test job to succeed.
+        uses: ./
+        with:
+          github-token: ''
+          results-file: './test/files/empty-results.json'
+
+      - name: 1 - Then the action outcome should be failure
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "failure" --actual "${{ steps.missing-github-token.outcome }}"
+
+      - name: 1 - And each of the outputs should be empty
+        if: always()
+        run: |
+          ./test/assert-value-is-empty.sh --name "test-outcome output" --value "${{ steps.missing-github-token.outputs.test-outcome }}"
+          ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.missing-github-token.outputs.test-results-truncated }}"
+          ./test/assert-value-is-empty.sh --name "test-results-file-path output" --value "${{ steps.missing-github-token.outputs.test-results-file-path }}"
+          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.missing-github-token.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.missing-github-token.outputs.pr-comment-id }}"
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                     TEST 2 - MISSING RESULTS_FILE INPUT                                     '
+        run: echo ""
+
+      - name: 2 - When process-jest-test-results is called with a missing results-file input
+        id: missing-results-file
+        if: always()
+        continue-on-error: true # This is needed because we expect the step to fail but we need it to "pass" in order for the test job to succeed.
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          results-file: ''
+
+      - name: 2 - Then the action outcome should be failure
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "failure" --actual "${{ steps.missing-results-file.outcome }}"
+
+      - name: 2 - And each of the outputs should be empty
+        if: always()
+        run: |
+          ./test/assert-value-is-empty.sh --name "test-outcome output" --value "${{ steps.missing-results-file.outputs.test-outcome }}"
+          ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.missing-results-file.outputs.test-results-truncated }}"
+          ./test/assert-value-is-empty.sh --name "test-results-file-path output" --value "${{ steps.missing-results-file.outputs.test-results-file-path }}"
+          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.missing-results-file.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.missing-results-file.outputs.pr-comment-id }}"
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                     TEST 3 - RESULTS_FILE DOES NOT EXIST                                    '
+        run: echo ""
+
+      - name: 3 - When process-jest-test-results is called with a results file that does not exist
+        id: file-does-not-exist
+        if: always()
+        continue-on-error: true # This is needed because we expect the step to fail but we need it to "pass" in order for the test job to succeed.
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          results-file: './test/files/file-that-does-not-exist.json'
+          create-status-check: false
+          create-pr-comment: false
+
+      - name: 3 - Then the action outcome should be failure
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "failure" --actual "${{ steps.file-does-not-exist.outcome }}"
+
+      - name: 3 - And the 'test-outcome' output should be Failed
+        if: always()
+        run: |
+          ./test/assert-values-match.sh --name "test-outcome output" --expected 'Failed' --actual "${{ steps.file-does-not-exist.outputs.test-outcome }}"
+
+      - name: 3 - And the remaining outputs should be empty
+        if: always()
+        run: |
+          ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.file-does-not-exist.outputs.test-results-truncated }}"
+          ./test/assert-value-is-empty.sh --name "test-results-file-path output" --value "${{ steps.file-does-not-exist.outputs.test-results-file-path }}"
+          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.file-does-not-exist.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.file-does-not-exist.outputs.pr-comment-id }}"
+      
+      
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                       TEST 4 - RESULTS_FILE IS EMPTY                                        '
+        run: echo ""
+
+      - name: 4 - When process-jest-test-results is called with a results file that is empty
+        id: empty-file
+        if: always()
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          results-file: './test/files/empty-results.json'
+          create-status-check: false
+          create-pr-comment: false
+
+      - name: 4 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.empty-file.outcome }}"
+
+      - name: 4 - And the 'test-outcome' output should be Failed
+        if: always()
+        run: |
+          ./test/assert-values-match.sh --name "test-outcome output" --expected 'Failed' --actual "${{ steps.empty-file.outputs.test-outcome }}"
+
+      - name: 4 - And the remaining outputs should be empty
+        if: always()
+        run: |
+          ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.empty-file.outputs.test-results-truncated }}"
+          ./test/assert-value-is-empty.sh --name "test-results-file-path output" --value "${{ steps.empty-file.outputs.test-results-file-path }}"
+          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.empty-file.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.empty-file.outputs.pr-comment-id }}"
+      
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                           TEST 5 - PASSING TESTS                                            '
+        run: echo ""
+
+      - name: 5 - When process-jest-test-results is called with a results file that has all passing tests
+        id: passing-tests
+        if: always()
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          results-file: './test/files/passing.json'
+          create-status-check: false
+          create-pr-comment: false
+          timezone: 'America/Denver'
+          report-name: 'Passing Test Results'
+
+      - name: 5 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.passing-tests.outcome }}"
+
+      - name: 5 - And the 'test-outcome' output should be Passed
+        if: always()
+        run: |
+          ./test/assert-values-match.sh --name "test-outcome output" --expected 'Passed' --actual "${{ steps.passing-tests.outputs.test-outcome }}"
+      
+      - name: 5 - And the 'test-results-file-path output' should be populated
+        if: always()
+        run: ./test/assert-value-is-not-empty.sh --name "test-results-file-path output" --value "${{ steps.passing-tests.outputs.test-results-file-path }}"
+
+      - name: 5 - And the remaining outputs should be empty since status checks and pr comments were not created
+        if: always()
+        run: |
+          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.passing-tests.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.passing-tests.outputs.pr-comment-id }}"
+          ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.passing-tests.outputs.test-results-truncated }}"
+      
+      - name: 5 - And the contents of test-results.md file should match the contents of ${{ env.PASSING_MD_FILE }} file
+        if: always()
+        run: |
+          # Comparing the test-results.md file will ensure that:
+          #  - The provided timezone (MST/MDT) is used
+          #  - The provided report name is used
+          #  - The badge has the right count/status/color
+          #  - The Duration stats are included in the report
+          #  - The Counter stats are included in the report
+          
+          expectedFileName="${{ env.PASSING_MD_FILE }}"
+          actualFileName="${{ steps.passing-tests.outputs.test-results-file-path }}"
+          ./test/assert-file-contents-match.sh --expectedFileName $expectedFileName --actualFileName $actualFileName
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                           TEST 6 - FAILING TESTS                                            '
+        run: echo ""
+
+      - name: 6 - When process-jest-test-results is called with a results file that has failing tests
+        id: failing-tests
+        if: always()
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          results-file: './test/files/failing.json'
+          create-status-check: false
+          create-pr-comment: false
+          # timezone: 'UTC'  # Test the default
+          # report-name: 'Jest Test Results'  # Test the default
+
+      - name: 6 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.failing-tests.outcome }}"
+
+      - name: 6 - And the 'test-outcome' output should be Failed
+        if: always()
+        run: |
+          ./test/assert-values-match.sh --name "test-outcome output" --expected 'Failed' --actual "${{ steps.failing-tests.outputs.test-outcome }}"
+      
+      - name: 6 - And the 'test-results-file-path output' should be populated
+        if: always()
+        run: ./test/assert-value-is-not-empty.sh --name "test-results-file-path output" --value "${{ steps.failing-tests.outputs.test-results-file-path }}"
+
+      - name: 6 - And the remaining outputs should be empty since status checks and pr comments were not created
+        if: always()
+        run: |
+          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.failing-tests.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.failing-tests.outputs.pr-comment-id }}"
+          ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.failing-tests.outputs.test-results-truncated }}"
+      
+      - name: 6 - And the contents of test-results.md file should match the contents of ${{ env.FAILING_MD_FILE }} file
+        if: always()
+        run: |
+          # Comparing the test-results.md file will ensure that:
+          #  - The default timezone (UTC) is used
+          #  - The default report name (Jest Test Results) is used
+          #  - The badge has the right count/status/color
+          #  - The Duration stats are included in the report
+          #  - The Counter stats are included in the report
+          #  - The failing test details are included in the report
+
+          expectedFileName="${{ env.FAILING_MD_FILE }}"
+          actualFileName="${{ steps.failing-tests.outputs.test-results-file-path }}"
+          ./test/assert-file-contents-match.sh --expectedFileName $expectedFileName --actualFileName $actualFileName
+      
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                         TEST 7 - NO TESTS REPORTED                                          '
+        run: echo ""
+
+      - name: 7 - When process-jest-test-results is called with a results file that has no tests reported
+        id: no-tests
+        if: always()
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          results-file: './test/files/no-tests.json'
+          report-name: 'Missing Test Results'
+          create-status-check: false
+          create-pr-comment: false
+          
+      - name: 7 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.no-tests.outcome }}"
+
+      - name: 7 - And the 'test-outcome' output should be Passed
+        if: always()
+        run: |
+          ./test/assert-values-match.sh --name "test-outcome output" --expected 'Passed' --actual "${{ steps.no-tests.outputs.test-outcome }}"
+      
+      - name: 7 - And the 'test-results-file-path output' should be populated
+        if: always()
+        run: ./test/assert-value-is-not-empty.sh --name "test-results-file-path output" --value "${{ steps.no-tests.outputs.test-results-file-path }}"
+
+      - name: 7 - And the remaining outputs should be empty since status checks and pr comments were not created
+        if: always()
+        run: |
+          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.no-tests.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.no-tests.outputs.pr-comment-id }}"
+          ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.no-tests.outputs.test-results-truncated }}"
+      
+      - name: 7 - And the contents of test-results.md file should match the contents of ${{ env.NO_TESTS_MD_FILE }} file
+        if: always()
+        run: |
+          # Comparing the test-results.md file will ensure that:
+          #  - The default timezone (UTC) is used
+          #  - The default report name (Missing Test Results) is used
+          #  - The badge has the right count/status/color
+          #  - The Duration section should not be included in the report
+          #  - The Counter stats are included in the report
+          #  - The no-test details are included in the report
+
+          expectedFileName="${{ env.NO_TESTS_MD_FILE }}"
+          actualFileName="${{ steps.no-tests.outputs.test-results-file-path }}"
+          ./test/assert-file-contents-match.sh --expectedFileName $expectedFileName --actualFileName $actualFileName

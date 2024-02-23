@@ -1,5 +1,5 @@
 const core = require('@actions/core');
-const { readJsonResultsFromFile, areThereAnyFailingTests } = require('./utils');
+const { readJsonResultsFromFile, areThereAnyFailingTests, createResultsFile } = require('./utils');
 const { createStatusCheck, createPrComment } = require('./github');
 const { getMarkupForJson } = require('./markup');
 
@@ -10,6 +10,7 @@ const requiredArgOptions = {
 
 const token = core.getInput('github-token', requiredArgOptions);
 const resultsFile = core.getInput('results-file', requiredArgOptions);
+
 const ignoreTestFailures = core.getBooleanInput('ignore-test-failures');
 const shouldCreateStatusCheck = core.getBooleanInput('create-status-check');
 const shouldCreatePRComment = core.getBooleanInput('create-pr-comment');
@@ -25,22 +26,25 @@ async function run() {
     }
 
     const failingTestsFound = areThereAnyFailingTests(resultsJson);
+    core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
 
     const markupData = getMarkupForJson(resultsJson, reportName);
 
-    let conclusion = 'success';
-    if (!resultsJson.success) {
-      conclusion = ignoreTestFailures ? 'neutral' : 'failure';
-    }
+    // Create this automatically to facilitate testing
+    const resultsFilePath = createResultsFile(markupData);
+    core.setOutput('test-results-file-path', resultsFilePath);
 
     if (shouldCreateStatusCheck) {
+      let conclusion = 'success';
+      if (!resultsJson.success) {
+        conclusion = ignoreTestFailures ? 'neutral' : 'failure';
+      }
       await createStatusCheck(token, markupData, conclusion, reportName);
     }
+
     if (shouldCreatePRComment) {
       await createPrComment(token, markupData, updateCommentIfOneExists);
     }
-
-    core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
   } catch (error) {
     if (error instanceof RangeError) {
       core.info(error.message);

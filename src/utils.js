@@ -1,5 +1,6 @@
 const core = require('@actions/core');
 const fs = require('fs');
+const path = require('path');
 
 async function readJsonResultsFromFile(resultsFile) {
   core.info('Reading results from jest results file....');
@@ -30,7 +31,28 @@ function areThereAnyFailingTests(json) {
   return false;
 }
 
+function createResultsFile(results) {
+  const jobId = process.env.GITHUB_JOB || '';
+  const stepId = process.env.GITHUB_ACTION || '';
+  const resultsFileName = `test-results-${jobId}-${stepId}.md`;
+
+  core.info(`\nWriting results to ${resultsFileName}`);
+  let resultsFilePath = null;
+
+  fs.writeFile(resultsFileName, results, err => {
+    if (err) {
+      core.info(`Error writing results to file. Error: ${err}`);
+    } else {
+      core.info('Successfully created results file.');
+      core.info(`File: ${resultsFileName}`);
+    }
+  });
+  resultsFilePath = path.resolve(resultsFileName);
+  return resultsFilePath;
+}
+
 module.exports = {
   readJsonResultsFromFile,
-  areThereAnyFailingTests
+  areThereAnyFailingTests,
+  createResultsFile
 };

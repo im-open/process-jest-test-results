@@ -2369,6 +2369,7 @@ var require_utils2 = __commonJS({
   'src/utils.js'(exports2, module2) {
     var core2 = require_core();
     var fs = require('fs');
+    var path = require('path');
     async function readJsonResultsFromFile2(resultsFile2) {
       core2.info('Reading results from jest results file....');
       if (fs.existsSync(resultsFile2)) {
@@ -2396,9 +2397,28 @@ var require_utils2 = __commonJS({
       core2.info(`There are no failing tests.`);
       return false;
     }
+    function createResultsFile2(results) {
+      const jobId = process.env.GITHUB_JOB || '';
+      const stepId = process.env.GITHUB_ACTION || '';
+      const resultsFileName = `test-results-${jobId}-${stepId}.md`;
+      core2.info(`
+Writing results to ${resultsFileName}`);
+      let resultsFilePath = null;
+      fs.writeFile(resultsFileName, results, err => {
+        if (err) {
+          core2.info(`Error writing results to file. Error: ${err}`);
+        } else {
+          core2.info('Successfully created results file.');
+          core2.info(`File: ${resultsFileName}`);
+        }
+      });
+      resultsFilePath = path.resolve(resultsFileName);
+      return resultsFilePath;
+    }
     module2.exports = {
       readJsonResultsFromFile: readJsonResultsFromFile2,
-      areThereAnyFailingTests: areThereAnyFailingTests2
+      areThereAnyFailingTests: areThereAnyFailingTests2,
+      createResultsFile: createResultsFile2
     };
   }
 });
@@ -19599,13 +19619,12 @@ var require_markup = __commonJS({
     var { format, utcToZonedTime } = require_date_fns_tz();
     var timezone = core2.getInput('timezone') || 'Etc/UTC';
     function getMarkupForJson2(results, reportName2) {
-      return `
-  # ${reportName2}
-  ${getBadge(results)}
-  ${getTestTimes(results)}
-  ${getTestCounters(results)}
-  ${getTestResultsMarkup(results)}
-  `;
+      return `# ${reportName2}
+
+${getBadge(results)}
+${getTestTimes(results)}
+${getTestCounters(results)}
+${getFailedAndEmptyTestResultsMarkup(results)}`;
     }
     function getBadge(results) {
       const failedCount = results.numFailedTests;
@@ -19625,6 +19644,10 @@ var require_markup = __commonJS({
       }
     }
     function getTestTimes(results) {
+      let hasTests = results.testResults && results.testResults.length > 0;
+      if (!hasTests) {
+        return '';
+      }
       let startSeconds = results.startTime;
       let endSeconds = results.testResults
         .map(m => m.endTime)
@@ -19634,25 +19657,23 @@ var require_markup = __commonJS({
       const duration = (endSeconds - startSeconds) / 1e3;
       let startDate = new Date(startSeconds);
       let endDate = new Date(endSeconds);
-      return `
-  <details>  
-    <summary> Duration: ${duration} seconds </summary>
-    <table>
-      <tr>
-          <th>Start:</th>
-          <td><code>${formatDate(startDate)}</code></td>
-      </tr>
-      <tr>
-          <th>Finish:</th>
-          <td><code>${formatDate(endDate)}</code></td>    
-      </tr>
-      <tr>
-          <th>Duration:</th>
-          <td><code>${duration} seconds</code></td>
-      </tr>
-    </table>
-  </details>
-  `;
+      return `<details>
+  <summary>Duration: ${duration} seconds</summary>
+  <table>
+    <tr>
+      <th>Start:</th>
+      <td><code>${formatDate(startDate)}</code></td>
+    </tr>
+    <tr>
+      <th>Finish:</th>
+      <td><code>${formatDate(endDate)}</code></td>
+    </tr>
+    <tr>
+      <th>Duration:</th>
+      <td><code>${duration} seconds</code></td>
+    </tr>
+  </table>
+</details>`;
     }
     function getTestCounters(results) {
       let extraProps = getTableRowIfHasValue('Pending Test Suites:', results.numPendingTestSuites);
@@ -19660,38 +19681,35 @@ var require_markup = __commonJS({
       extraProps += getTableRowIfHasValue('Runtime Error Test Suites:', results.numRuntimeErrorTestSuites);
       extraProps += getTableRowIfHasValue('TODO Tests:', results.numTodoTests);
       let outcome = results.success ? 'Passed' : 'Failed';
-      return `
-  <details>
-    <summary> Outcome: ${outcome} | Total Tests: ${results.numTotalTests} | Passed: ${results.numPassedTests} | Failed: ${results.numFailedTests} </summary>
-    <table>
-      <tr>
-         <th>Total Test Suites:</th>
-         <td>${results.numTotalTestSuites}</td>
-      </tr>
-      <tr>
-         <th>Total Tests:</th>
-         <td>${results.numTotalTests}</td>
-      </tr>
-      <tr>
-         <th>Failed Test Suites:</th>
-         <td>${results.numFailedTestSuites}</td>    
-      </tr>
-      <tr>
-         <th>Failed Tests:</th>
-         <td>${results.numFailedTests}</td>    
-      </tr>
-      <tr>
-         <th>Passed Test Suites:</th>
-         <td>${results.numPassedTestSuites}</td>    
-      </tr>
-      <tr>
-         <th>Passed Tests:</th>
-         <td>${results.numPassedTests}</td>    
-      </tr>${extraProps}
-    </table>
-  </details>
-
-  `;
+      return `<details>
+  <summary>Outcome: ${outcome} | Total Tests: ${results.numTotalTests} | Passed: ${results.numPassedTests} | Failed: ${results.numFailedTests}</summary>
+  <table>
+    <tr>
+      <th>Total Test Suites:</th>
+      <td>${results.numTotalTestSuites}</td>
+    </tr>
+    <tr>
+      <th>Total Tests:</th>
+      <td>${results.numTotalTests}</td>
+    </tr>
+    <tr>
+      <th>Failed Test Suites:</th>
+      <td>${results.numFailedTestSuites}</td>
+    </tr>
+    <tr>
+      <th>Failed Tests:</th>
+      <td>${results.numFailedTests}</td>
+    </tr>
+    <tr>
+      <th>Passed Test Suites:</th>
+      <td>${results.numPassedTestSuites}</td>
+    </tr>
+    <tr>
+      <th>Passed Tests:</th>
+      <td>${results.numPassedTests}</td>
+    </tr>${extraProps}
+  </table>
+</details>`;
     }
     function getTableRowIfHasValue(heading, data) {
       if (data > 0) {
@@ -19703,7 +19721,7 @@ var require_markup = __commonJS({
       }
       return '';
     }
-    function getTestResultsMarkup(results, reportName2) {
+    function getFailedAndEmptyTestResultsMarkup(results, reportName2) {
       let resultsMarkup = '';
       if (!results.testResults || results.testResults.length === 0) {
         return getNoResultsMarkup(reportName2);
@@ -19715,43 +19733,43 @@ var require_markup = __commonJS({
         failedTests.forEach(failedTest => {
           resultsMarkup += getFailedTestMarkup(failedTest);
         });
-        return resultsMarkup.trim();
+        return resultsMarkup;
       }
     }
     function getNoResultsMarkup(reportName2) {
       const testResultIcon = ':grey_question:';
       const resultsMarkup = `
-  ## ${testResultIcon} ${reportName2}
-  There were no test results to report.
-  `;
+## ${testResultIcon} ${reportName2}
+
+There were no test results to report.
+`;
       return resultsMarkup;
     }
     function getFailedTestMarkup(failedTest) {
       core2.debug(`Processing ${failedTest.fullName}`);
       let failedMsg = failedTest.failureMessages.join('\n').replace(/\u001b\[\d{1,2}m/gi, '');
-      return `
-  <details>
-    <summary>:x: ${failedTest.fullName}</summary>    
-    <table>
-      <tr>
-         <th>Title:</th>
-         <td><code>${failedTest.title}</code></td>
-      </tr>
-      <tr>
-         <th>Status:</th>
-         <td><code>${failedTest.status}</code></td>
-      </tr>
-      <tr>
-         <th>Location:</th>
-         <td><code>${failedTest.location}</code></td>
-      </tr>
-      <tr>
-        <th>Failure Messages:</th>
-        <td><pre>${failedMsg}</pre></td>
-      </tr>
-    </table>
-  </details>
-  `.trim();
+      return `<details>
+  <summary>:x: ${failedTest.fullName}</summary>
+  <table>
+    <tr>
+      <th>Title:</th>
+      <td><code>${failedTest.title}</code></td>
+    </tr>
+    <tr>
+      <th>Status:</th>
+      <td><code>${failedTest.status}</code></td>
+    </tr>
+    <tr>
+      <th>Location:</th>
+      <td><code>${failedTest.location}</code></td>
+    </tr>
+    <tr>
+      <th>Failure Messages:</th>
+      <td><pre>${failedMsg}</pre></td>
+    </tr>
+  </table>
+</details>
+`;
     }
     module2.exports = {
       getMarkupForJson: getMarkupForJson2
@@ -19761,7 +19779,7 @@ var require_markup = __commonJS({
 
 // src/main.js
 var core = require_core();
-var { readJsonResultsFromFile, areThereAnyFailingTests } = require_utils2();
+var { readJsonResultsFromFile, areThereAnyFailingTests, createResultsFile } = require_utils2();
 var { createStatusCheck, createPrComment } = require_github2();
 var { getMarkupForJson } = require_markup();
 var requiredArgOptions = {
@@ -19783,18 +19801,20 @@ async function run() {
       return;
     }
     const failingTestsFound = areThereAnyFailingTests(resultsJson);
+    core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
     const markupData = getMarkupForJson(resultsJson, reportName);
-    let conclusion = 'success';
-    if (!resultsJson.success) {
-      conclusion = ignoreTestFailures ? 'neutral' : 'failure';
-    }
+    const resultsFilePath = createResultsFile(markupData);
+    core.setOutput('test-results-file-path', resultsFilePath);
     if (shouldCreateStatusCheck) {
+      let conclusion = 'success';
+      if (!resultsJson.success) {
+        conclusion = ignoreTestFailures ? 'neutral' : 'failure';
+      }
       await createStatusCheck(token, markupData, conclusion, reportName);
     }
     if (shouldCreatePRComment) {
       await createPrComment(token, markupData, updateCommentIfOneExists);
     }
-    core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
   } catch (error) {
     if (error instanceof RangeError) {
       core.info(error.message);

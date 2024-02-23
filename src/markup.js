@@ -3,13 +3,12 @@ const { format, utcToZonedTime } = require('date-fns-tz');
 const timezone = core.getInput('timezone') || 'Etc/UTC';
 
 function getMarkupForJson(results, reportName) {
-  return `
-  # ${reportName}
-  ${getBadge(results)}
-  ${getTestTimes(results)}
-  ${getTestCounters(results)}
-  ${getTestResultsMarkup(results)}
-  `;
+  return `# ${reportName}
+
+${getBadge(results)}
+${getTestTimes(results)}
+${getTestCounters(results)}
+${getFailedAndEmptyTestResultsMarkup(results)}`;
 }
 
 function getBadge(results) {
@@ -34,6 +33,11 @@ function formatDate(dateToFormat) {
 }
 
 function getTestTimes(results) {
+  let hasTests = results.testResults && results.testResults.length > 0;
+  if (!hasTests) {
+    return '';
+  }
+
   let startSeconds = results.startTime;
   let endSeconds = results.testResults
     .map(m => m.endTime)
@@ -45,25 +49,23 @@ function getTestTimes(results) {
   let startDate = new Date(startSeconds);
   let endDate = new Date(endSeconds);
 
-  return `
-  <details>  
-    <summary> Duration: ${duration} seconds </summary>
-    <table>
-      <tr>
-          <th>Start:</th>
-          <td><code>${formatDate(startDate)}</code></td>
-      </tr>
-      <tr>
-          <th>Finish:</th>
-          <td><code>${formatDate(endDate)}</code></td>    
-      </tr>
-      <tr>
-          <th>Duration:</th>
-          <td><code>${duration} seconds</code></td>
-      </tr>
-    </table>
-  </details>
-  `;
+  return `<details>
+  <summary>Duration: ${duration} seconds</summary>
+  <table>
+    <tr>
+      <th>Start:</th>
+      <td><code>${formatDate(startDate)}</code></td>
+    </tr>
+    <tr>
+      <th>Finish:</th>
+      <td><code>${formatDate(endDate)}</code></td>
+    </tr>
+    <tr>
+      <th>Duration:</th>
+      <td><code>${duration} seconds</code></td>
+    </tr>
+  </table>
+</details>`;
 }
 
 function getTestCounters(results) {
@@ -72,38 +74,35 @@ function getTestCounters(results) {
   extraProps += getTableRowIfHasValue('Runtime Error Test Suites:', results.numRuntimeErrorTestSuites);
   extraProps += getTableRowIfHasValue('TODO Tests:', results.numTodoTests);
   let outcome = results.success ? 'Passed' : 'Failed';
-  return `
-  <details>
-    <summary> Outcome: ${outcome} | Total Tests: ${results.numTotalTests} | Passed: ${results.numPassedTests} | Failed: ${results.numFailedTests} </summary>
-    <table>
-      <tr>
-         <th>Total Test Suites:</th>
-         <td>${results.numTotalTestSuites}</td>
-      </tr>
-      <tr>
-         <th>Total Tests:</th>
-         <td>${results.numTotalTests}</td>
-      </tr>
-      <tr>
-         <th>Failed Test Suites:</th>
-         <td>${results.numFailedTestSuites}</td>    
-      </tr>
-      <tr>
-         <th>Failed Tests:</th>
-         <td>${results.numFailedTests}</td>    
-      </tr>
-      <tr>
-         <th>Passed Test Suites:</th>
-         <td>${results.numPassedTestSuites}</td>    
-      </tr>
-      <tr>
-         <th>Passed Tests:</th>
-         <td>${results.numPassedTests}</td>    
-      </tr>${extraProps}
-    </table>
-  </details>
-
-  `;
+  return `<details>
+  <summary>Outcome: ${outcome} | Total Tests: ${results.numTotalTests} | Passed: ${results.numPassedTests} | Failed: ${results.numFailedTests}</summary>
+  <table>
+    <tr>
+      <th>Total Test Suites:</th>
+      <td>${results.numTotalTestSuites}</td>
+    </tr>
+    <tr>
+      <th>Total Tests:</th>
+      <td>${results.numTotalTests}</td>
+    </tr>
+    <tr>
+      <th>Failed Test Suites:</th>
+      <td>${results.numFailedTestSuites}</td>
+    </tr>
+    <tr>
+      <th>Failed Tests:</th>
+      <td>${results.numFailedTests}</td>
+    </tr>
+    <tr>
+      <th>Passed Test Suites:</th>
+      <td>${results.numPassedTestSuites}</td>
+    </tr>
+    <tr>
+      <th>Passed Tests:</th>
+      <td>${results.numPassedTests}</td>
+    </tr>${extraProps}
+  </table>
+</details>`;
 }
 
 function getTableRowIfHasValue(heading, data) {
@@ -117,7 +116,7 @@ function getTableRowIfHasValue(heading, data) {
   return '';
 }
 
-function getTestResultsMarkup(results, reportName) {
+function getFailedAndEmptyTestResultsMarkup(results, reportName) {
   let resultsMarkup = '';
 
   if (!results.testResults || results.testResults.length === 0) {
@@ -130,16 +129,17 @@ function getTestResultsMarkup(results, reportName) {
     failedTests.forEach(failedTest => {
       resultsMarkup += getFailedTestMarkup(failedTest);
     });
-    return resultsMarkup.trim();
+    return resultsMarkup;
   }
 }
 
 function getNoResultsMarkup(reportName) {
   const testResultIcon = ':grey_question:';
   const resultsMarkup = `
-  ## ${testResultIcon} ${reportName}
-  There were no test results to report.
-  `;
+## ${testResultIcon} ${reportName}
+
+There were no test results to report.
+`;
   return resultsMarkup;
 }
 
@@ -148,29 +148,28 @@ function getFailedTestMarkup(failedTest) {
 
   //Replace an escaped unicode "escape character".  It doesn't show correctly in markdown.
   let failedMsg = failedTest.failureMessages.join('\n').replace(/\u001b\[\d{1,2}m/gi, '');
-  return `
-  <details>
-    <summary>:x: ${failedTest.fullName}</summary>    
-    <table>
-      <tr>
-         <th>Title:</th>
-         <td><code>${failedTest.title}</code></td>
-      </tr>
-      <tr>
-         <th>Status:</th>
-         <td><code>${failedTest.status}</code></td>
-      </tr>
-      <tr>
-         <th>Location:</th>
-         <td><code>${failedTest.location}</code></td>
-      </tr>
-      <tr>
-        <th>Failure Messages:</th>
-        <td><pre>${failedMsg}</pre></td>
-      </tr>
-    </table>
-  </details>
-  `.trim();
+  return `<details>
+  <summary>:x: ${failedTest.fullName}</summary>
+  <table>
+    <tr>
+      <th>Title:</th>
+      <td><code>${failedTest.title}</code></td>
+    </tr>
+    <tr>
+      <th>Status:</th>
+      <td><code>${failedTest.status}</code></td>
+    </tr>
+    <tr>
+      <th>Location:</th>
+      <td><code>${failedTest.location}</code></td>
+    </tr>
+    <tr>
+      <th>Failure Messages:</th>
+      <td><pre>${failedMsg}</pre></td>
+    </tr>
+  </table>
+</details>
+`;
 }
 
 module.exports = {

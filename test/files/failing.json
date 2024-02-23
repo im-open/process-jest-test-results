@@ -1,0 +1,131 @@
+{
+    "numFailedTestSuites": 1,
+    "numFailedTests": 1,
+    "numPassedTestSuites": 0,
+    "numPassedTests": 5,
+    "numPendingTestSuites": 0,
+    "numPendingTests": 0,
+    "numRuntimeErrorTestSuites": 0,
+    "numTodoTests": 0,
+    "numTotalTestSuites": 1,
+    "numTotalTests": 6,
+    "openHandles": [],
+    "snapshot": {
+        "added": 0,
+        "didUpdate": false,
+        "failure": false,
+        "filesAdded": 0,
+        "filesRemoved": 0,
+        "filesRemovedList": [],
+        "filesUnmatched": 0,
+        "filesUpdated": 0,
+        "matched": 0,
+        "total": 0,
+        "unchecked": 0,
+        "uncheckedKeysByFile": [],
+        "unmatched": 0,
+        "updated": 0
+    },
+    "startTime": 1708721075369,
+    "success": false,
+    "testResults": [
+        {
+            "assertionResults": [
+                {
+                    "ancestorTitles": [],
+                    "duration": 339,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should be able to select a recommended reason",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 3,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should be able to select a recommended reason"
+                },
+                {
+                    "ancestorTitles": [],
+                    "duration": 187,
+                    "failureDetails": [
+                        {
+                            "matcherResult": {
+                                "message": "\u001b[2mexpect(\u001b[22m\u001b[31mjest.fn()\u001b[39m\u001b[2m).\u001b[22mtoHaveBeenCalledTimes\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected number of calls: \u001b[32m3\u001b[39m\nReceived number of calls: \u001b[31m1\u001b[39m",
+                                "pass": false
+                            }
+                        }
+                    ],
+                    "failureMessages": [
+                        "Error: \u001b[2mexpect(\u001b[22m\u001b[31mjest.fn()\u001b[39m\u001b[2m).\u001b[22mtoHaveBeenCalledTimes\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected number of calls: \u001b[32m3\u001b[39m\nReceived number of calls: \u001b[31m1\u001b[39m\n    at toHaveBeenCalledTimes (C:\\code\\Selector.test.js:69:20)\n    at call (C:\\code\\Selector.test.js:2:1)\n    at Generator.tryCatch (C:\\code\\Selector.test.js:2:1)\n    at Generator._invoke [as next] (C:\\code\\Selector.test.js:2:1)\n    at asyncGeneratorStep (C:\\code\\Selector.test.js:2:1)\n    at asyncGeneratorStep (C:\\code\\Selector.test.js:2:1)"
+                    ],
+                    "fullName": "should be able to open the additional reasons drawer and select a reason",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 1,
+                    "retryReasons": [],
+                    "status": "failed",
+                    "title": "should be able to open the additional reasons drawer and select a reason"
+                },
+                {
+                    "ancestorTitles": [],
+                    "duration": 167,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should display an error when save is clicked with an invalid event date",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 2,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should display an error when save is clicked with an invalid event date"
+                },
+                {
+                    "ancestorTitles": [],
+                    "duration": 76,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should display an error when save is clicked without entering a date",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 2,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should display an error when save is clicked without entering a date"
+                },
+                {
+                    "ancestorTitles": [],
+                    "duration": 64,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should be able to save a reason which doesn't require an event date",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 3,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should be able to save a reason which doesn't require an event date"
+                },
+                {
+                    "ancestorTitles": [],
+                    "duration": 169,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should display the reason with isDisplayedFirst first",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 1,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should display the reason with isDisplayedFirst first"
+                }
+            ],
+            "endTime": 1708721079273,
+            "message": "\u001b[1m\u001b[31m  \u001b[1m● \u001b[22m\u001b[1mshould be able to open the additional reasons drawer and select a reason\u001b[39m\u001b[22m\n\n    \u001b[2mexpect(\u001b[22m\u001b[31mjest.fn()\u001b[39m\u001b[2m).\u001b[22mtoHaveBeenCalledTimes\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n    Expected number of calls: \u001b[32m3\u001b[39m\n    Received number of calls: \u001b[31m1\u001b[39m\n\u001b[2m\u001b[22m\n\u001b[2m    \u001b[0m \u001b[90m 67 |\u001b[39m   screen\u001b[33m.\u001b[39mgetByText(\u001b[32m'Save'\u001b[39m)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\u001b[22m\n\u001b[2m    \u001b[0m \u001b[90m 68 |\u001b[39m   \u001b[90m//expect onChange to have been called with the correct reason\u001b[39m\u001b[0m\u001b[22m\n\u001b[2m    \u001b[0m\u001b[31m\u001b[1m>\u001b[22m\u001b[2m\u001b[39m\u001b[90m 69 |\u001b[39m   expect(onChange)\u001b[33m.\u001b[39mtoHaveBeenCalledTimes(\u001b[35m3\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\u001b[22m\n\u001b[2m    \u001b[0m \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[2m\u001b[39m\u001b[0m\u001b[22m\n\u001b[2m    \u001b[0m \u001b[90m 70 |\u001b[39m   expect(onChange)\u001b[33m.\u001b[39mtoHaveBeenCalledWith({\u001b[0m\u001b[22m\n\u001b[2m    \u001b[0m \u001b[90m 71 |\u001b[39m     displayText\u001b[33m:\u001b[39m \u001b[32m'I moved back to the United States after living outside of the country.'\u001b[39m\u001b[33m,\u001b[39m\u001b[0m\u001b[22m\n\u001b[2m    \u001b[0m \u001b[90m 72 |\u001b[39m     code\u001b[33m:\u001b[39m \u001b[32m'RUS'\u001b[39m\u001b[33m,\u001b[39m\u001b[0m\u001b[22m\n\u001b[2m\u001b[22m\n\u001b[2m      \u001b[2mat toHaveBeenCalledTimes (\u001b[22m\u001b[2m\u001b[0m\u001b[36mApp/components/Selector.test.js\u001b[39m\u001b[0m\u001b[2m:69:20)\u001b[22m\u001b[2m\u001b[22m\n\u001b[2m      \u001b[2mat call (\u001b[22m\u001b[2m\u001b[0m\u001b[36mApp/components/Selector.test.js\u001b[39m\u001b[0m\u001b[2m:2:1)\u001b[22m\u001b[2m\u001b[22m\n\u001b[2m      \u001b[2mat Generator.tryCatch (\u001b[22m\u001b[2m\u001b[0m\u001b[36mApp/components/Selector.test.js\u001b[39m\u001b[0m\u001b[2m:2:1)\u001b[22m\u001b[2m\u001b[22m\n\u001b[2m      \u001b[2mat Generator._invoke [as next] (\u001b[22m\u001b[2m\u001b[0m\u001b[36mApp/components/Selector.test.js\u001b[39m\u001b[0m\u001b[2m:2:1)\u001b[22m\u001b[2m\u001b[22m\n\u001b[2m      \u001b[2mat asyncGeneratorStep (\u001b[22m\u001b[2m\u001b[0m\u001b[36mApp/components/Selector.test.js\u001b[39m\u001b[0m\u001b[2m:2:1)\u001b[22m\u001b[2m\u001b[22m\n\u001b[2m      \u001b[2mat asyncGeneratorStep (\u001b[22m\u001b[2m\u001b[0m\u001b[36mApp/components/Selector.test.js\u001b[39m\u001b[0m\u001b[2m:2:1)\u001b[22m\u001b[2m\u001b[22m\n",
+            "name": "C:\\code\\Selector.test.js",
+            "startTime": 1708721075810,
+            "status": "failed",
+            "summary": ""
+        }
+    ],
+    "wasInterrupted": false
+}
