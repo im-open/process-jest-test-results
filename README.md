@@ -29,11 +29,18 @@ This action does not run the Jest tests itself and it can only process one resul
   
 ## Failures
 
-The status check can be seen as a new item on the workflow run, a PR comment or on the PR Status Check section.  If the test results contain failures, the status check will be marked as failed. Having the status check marked as failed will prevent PRs from being merged. If this status check behavior is not desired, the `ignore-test-failures` input can be set and the outcome will be marked as neutral if test failures are detected. The status badge that is shown in the comment or status check body will still indicate it was a failure though.
+The test status & action's conclusion can be viewed in multiple places:
+
+- In the body of a PR comment this action generates
+- Next to the name of one of the status checks under the `Checks` section of a PR
+- Next to the name of one of the status checks under the `Jobs` section of the workflow run
+- In the body of a status check listed on the workflow run
+
+If the test results contain failures, the status check's conclusion will be set to `failure`. If the status check is required and its conclusion is `failure` the PR cannot be merged.  If this required status check behavior is not desired, the `ignore-test-failures` input can be set and the conclusion will be marked as `neutral` if test failures are detected. The status badge that is shown in the comment or status check body will still indicate it was a `failure` though.
 
 ## Limitations
 
-GitHub does have a size limitation of 65535 characters for a Status Check body or a PR Comment.  This action will fail if the test results exceed the GitHub [limit].  To mitigate this size issue only failed tests are included in the output.
+GitHub does have a size limitation of 65535 characters for a Status Check body or a PR Comment. This action would fail if the test results exceeded the GitHub [limit]. To mitigate this size issue only details for failed tests are included in the output in addition to a badge, duration info and outcome info.  If the comment still exceeds that size, it will be truncated with a note to see the remaining output in the log.
 
 If you have multiple workflows triggered by the same `pull_request` or `push` event, GitHub creates one checksuite for that commit.  The checksuite gets assigned to one of the workflows randomly and all status checks for that commit are reported to that checksuite. That means if there are multiple workflows with the same trigger, your status checks may show on a different workflow run than the run that created them.
 
@@ -74,9 +81,13 @@ For failed test runs you can expand each failed test and view more details about
 
 ## Outputs
 
-| Output         | Description                                                                                                                                                           |
-|----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `test-outcome` | Test outcome based on presence of failing tests: *Failed,Passed*<br/>If exceptions are thrown or if it exits early because of argument errors, this is set to Failed. |
+| Output                   | Description                                                                                                                                                                           |
+|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `test-outcome`           | Test outcome based on presence of failing tests: *Failed,Passed*<br/>If exceptions are thrown or if it exits early because of argument errors, this is set to Failed.                 |
+| `test-results-truncated` | Flag indicating whether test results were truncated due to markdown exceeding character limit of 65535.                                                                               |
+| `test-results-file-path` | File path for the file that contains the pre-truncated test results in markdown format.  This is the same output that is posted in the PR comment.                                    |
+| `status-check-ids`       | A comma-separated string of IDs for any status checks that were created. This is only set if `create-status-check` is `true` and one or more status checks were created successfully. |
+| `pr-comment-id`          | The ID of the PR comment that was created.  This is only set if `create-pr-comment` is `true` and a PR was created successfully.                                                      |
 
 ## Usage Examples
 
@@ -103,7 +114,7 @@ jobs:
       - name: Process jest results with default
         if: always()
         # You may also reference just the major or major.minor version
-        uses: im-open/process-jest-test-results@v2.1.3
+        uses: im-open/process-jest-test-results@v2.2.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-file: 'src/ProjectWithJestTests/jest-results.json
@@ -125,7 +136,7 @@ jobs:
       
       - name: Process jest results
         id: process-jest
-        uses: im-open/process-jest-test-results@v2.1.3
+        uses: im-open/process-jest-test-results@v2.2.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-file: 'jest.json'
@@ -193,7 +204,7 @@ This project has adopted the [im-open's Code of Conduct](https://github.com/im-o
 
 ## License
 
-Copyright &copy; 2023, Extend Health, LLC. Code released under the [MIT license](LICENSE).
+Copyright &copy; 2024, Extend Health, LLC. Code released under the [MIT license](LICENSE).
 
 <!-- Links -->
 [Incrementing the Version]: #incrementing-the-version
