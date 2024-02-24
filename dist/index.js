@@ -16653,33 +16653,47 @@ var require_github2 = __commonJS({
     var github = require_github();
     var markupPrefix = '<!-- im-open/process-jest-test-results -->';
     async function createStatusCheck2(repoToken, markupData, conclusion, reportName2) {
-      core2.info(`Creating Status check for ${reportName2}...`);
+      core2.info(`
+Creating Status check for ${reportName2}...`);
       const octokit = github.getOctokit(repoToken);
       const git_sha =
         github.context.eventName === 'pull_request' ? github.context.payload.pull_request.head.sha : github.context.sha;
-      core2.info(`Creating status check for GitSha: ${git_sha} on a ${github.context.eventName} event.`);
+      const name = `status check - ${reportName2.toLowerCase()}`;
+      const status = 'completed';
       const checkTime = new Date().toUTCString();
-      core2.info(`Check time is: ${checkTime}`);
+      const summary = `This test run completed at \`${checkTime}\``;
+      let propMessage = `  Name: ${name}
+  GitSha: ${git_sha}
+  Event: ${github.context.eventName}
+  Status: ${status}
+  Conclusion: ${conclusion}
+  Check time: ${checkTime}
+  Title: ${reportName2}
+  Summary: ${summary}`;
+      core2.info(propMessage);
+      let statusCheckId;
       await octokit.rest.checks
         .create({
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
-          name: `status check - ${reportName2.toLowerCase()}`,
+          name,
           head_sha: git_sha,
-          status: 'completed',
+          status,
           conclusion,
           output: {
             title: reportName2,
-            summary: `This test run completed at \`${checkTime}\``,
+            summary,
             text: markupData
           }
         })
         .then(response => {
-          core2.info(`Created check: ${response.data.name}`);
+          core2.info(`Created check: '${response.data.name}' with id '${response.data.id}'`);
+          statusCheckId = response.data.id;
         })
         .catch(error => {
           core2.setFailed(`An error occurred trying to create the status check: ${error.message}`);
         });
+      return statusCheckId;
     }
     async function lookForExistingComment(octokit) {
       let commentId = null;
@@ -19810,7 +19824,8 @@ async function run() {
       if (!resultsJson.success) {
         conclusion = ignoreTestFailures ? 'neutral' : 'failure';
       }
-      await createStatusCheck(token, markupData, conclusion, reportName);
+      const checkId = await createStatusCheck(token, markupData, conclusion, reportName);
+      core.setOutput('status-check-id', checkId);
     }
     if (shouldCreatePRComment) {
       await createPrComment(token, markupData, updateCommentIfOneExists);

@@ -39,10 +39,13 @@ async function run() {
       if (!resultsJson.success) {
         conclusion = ignoreTestFailures ? 'neutral' : 'failure';
       }
-      await createStatusCheck(token, markupData, conclusion, reportName);
+      const checkId = await createStatusCheck(token, markupData, conclusion, reportName);
+      core.setOutput('status-check-id', checkId); // This is mainly for testing purposes
     }
 
     if (shouldCreatePRComment) {
+      // GitHub API has a limit of 65535 characters for a comment so truncate the markup if we need to
+
       await createPrComment(token, markupData, updateCommentIfOneExists);
     }
   } catch (error) {

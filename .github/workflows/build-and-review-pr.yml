@@ -101,7 +101,7 @@ jobs:
           ./test/assert-value-is-empty.sh --name "test-outcome output" --value "${{ steps.missing-github-token.outputs.test-outcome }}"
           ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.missing-github-token.outputs.test-results-truncated }}"
           ./test/assert-value-is-empty.sh --name "test-results-file-path output" --value "${{ steps.missing-github-token.outputs.test-results-file-path }}"
-          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.missing-github-token.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.missing-github-token.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.missing-github-token.outputs.pr-comment-id }}"
 
       - name: '-------------------------------------------------------------------------------------------------------------'
@@ -128,7 +128,7 @@ jobs:
           ./test/assert-value-is-empty.sh --name "test-outcome output" --value "${{ steps.missing-results-file.outputs.test-outcome }}"
           ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.missing-results-file.outputs.test-results-truncated }}"
           ./test/assert-value-is-empty.sh --name "test-results-file-path output" --value "${{ steps.missing-results-file.outputs.test-results-file-path }}"
-          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.missing-results-file.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.missing-results-file.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.missing-results-file.outputs.pr-comment-id }}"
 
       - name: '-------------------------------------------------------------------------------------------------------------'
@@ -161,7 +161,7 @@ jobs:
         run: |
           ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.file-does-not-exist.outputs.test-results-truncated }}"
           ./test/assert-value-is-empty.sh --name "test-results-file-path output" --value "${{ steps.file-does-not-exist.outputs.test-results-file-path }}"
-          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.file-does-not-exist.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.file-does-not-exist.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.file-does-not-exist.outputs.pr-comment-id }}"
       
       
@@ -194,7 +194,7 @@ jobs:
         run: |
           ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.empty-file.outputs.test-results-truncated }}"
           ./test/assert-value-is-empty.sh --name "test-results-file-path output" --value "${{ steps.empty-file.outputs.test-results-file-path }}"
-          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.empty-file.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.empty-file.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.empty-file.outputs.pr-comment-id }}"
       
       - name: '-------------------------------------------------------------------------------------------------------------'
@@ -230,7 +230,7 @@ jobs:
       - name: 5 - And the remaining outputs should be empty since status checks and pr comments were not created
         if: always()
         run: |
-          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.passing-tests.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.passing-tests.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.passing-tests.outputs.pr-comment-id }}"
           ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.passing-tests.outputs.test-results-truncated }}"
       
@@ -281,7 +281,7 @@ jobs:
       - name: 6 - And the remaining outputs should be empty since status checks and pr comments were not created
         if: always()
         run: |
-          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.failing-tests.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.failing-tests.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.failing-tests.outputs.pr-comment-id }}"
           ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.failing-tests.outputs.test-results-truncated }}"
       
@@ -332,7 +332,7 @@ jobs:
       - name: 7 - And the remaining outputs should be empty since status checks and pr comments were not created
         if: always()
         run: |
-          ./test/assert-value-is-empty.sh --name "status-check-ids output" --value "${{ steps.no-tests.outputs.status-check-ids }}"
+          ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.no-tests.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.no-tests.outputs.pr-comment-id }}"
           ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.no-tests.outputs.test-results-truncated }}"
       
@@ -350,3 +350,189 @@ jobs:
           expectedFileName="${{ env.NO_TESTS_MD_FILE }}"
           actualFileName="${{ steps.no-tests.outputs.test-results-file-path }}"
           ./test/assert-file-contents-match.sh --expectedFileName $expectedFileName --actualFileName $actualFileName
+
+  test-status-checks:
+    runs-on: ubuntu-latest
+    env:
+      FAILING_RESULTS: './test/files/failing.json'
+      PASSING_RESULTS: './test/files/passing.json'
+      NO_RESULTS: './test/files/no-tests.json'
+      FAILING_MD_FILE: './test/files/expected-results-for-failing-tests.md'
+      PASSING_MD_FILE: './test/files/expected-results-for-passing-tests.md'
+      NO_TESTS_MD_FILE: './test/files/expected-results-for-no-tests.md'
+      NO_FAILURES_REPORT_NAME: 'No Failing Tests'
+      IGNORE_FAILURES_REPORT_NAME: 'Ignore Failing Tests'
+      ALLOW_FAILURES_REPORT_NAME: 'Allow Failing Tests'
+      
+    steps:
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                                    SETUP                                                    '
+        run: echo ""
+
+      - name: Setup - Fail test job if fork
+        run: |
+          if [ "${{ github.event.pull_request.head.repo.fork }}" == "true" ]; then
+            echo "This test job requires the `checks: write` scope on the GITHUB_TOKEN which PRs from forks do not have.  Before this PR can be merged, the tests should be run on an intermediate branch created by repository owners."
+            exit 1
+          fi
+
+      - name: Setup - Checkout the action
+        uses: actions/checkout@v4
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                     TEST 8 - STATUS CHECK - NO FAILURES                                    '
+        run: echo ""
+
+      - name: 8 - When process-jest-test-results is called with no failures
+        if: always()
+        id: no-failures
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          results-file: ${{ env.PASSING_RESULTS }}
+          report-name: ${{ env.NO_FAILURES_REPORT_NAME }}
+          create-status-check: true
+          create-pr-comment: false
+
+      - name: 8 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.no-failures.outcome }}"
+
+      - name: 8 - And the status-check-id output should be populated
+        if: always()
+        run: ./test/assert-value-is-not-empty.sh --name "status-check-id output" --value "${{ steps.no-failures.outputs.status-check-id }}"
+
+      - name: 8 - And the test-outcome output should be Passed
+        if: always()
+        run: ./test/assert-values-match.sh --name "test-outcome output" --expected "Passed" --actual "${{ steps.no-failures.outputs.test-outcome }}"
+
+      - name: 8 - And the status check should match the inputs
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const assertStatusCheckExists = require('./test/assert-status-checks-exist.js');
+            const assertStatusCheckMatchesExpectations = require('./test/assert-status-check-matches-expectations.js');
+
+            const checkId = '${{ steps.no-failures.outputs.status-check-id }}';
+            const actualCheck = await assertStatusCheckExists(github, core, checkId);
+            const expectedBody = fs.readFileSync('${{ env.PASSING_MD_FILE }}', 'utf8');
+
+            const expectedValues = {
+              name: 'status check - ${{ env.NO_FAILURES_REPORT_NAME }}'.toLowerCase(),
+              status: 'completed',
+              conclusion: 'success',
+              title: '${{ env.NO_FAILURES_REPORT_NAME }}',
+              text: expectedBody
+            };
+            assertStatusCheckMatchesExpectations(core, actualCheck, expectedValues);
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                   TEST 9 - STATUS CHECK - IGNORE FAILURES                                  '
+        run: echo ""
+
+      - name: 9 - When process-jest-test-results is called with test failures & ignore-test-failures=true
+        if: always()
+        id: ignore-failures
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          results-file: ${{ env.FAILING_RESULTS }}
+          report-name: ${{ env.IGNORE_FAILURES_REPORT_NAME }}
+          create-status-check: true
+          ignore-test-failures: true
+          create-pr-comment: false
+
+      - name: 9 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.ignore-failures.outcome }}"
+
+      - name: 9 - And the status-check-id output should be populated
+        if: always()
+        run: ./test/assert-value-is-not-empty.sh --name "status-check-id output" --value "${{ steps.ignore-failures.outputs.status-check-id }}"
+
+      - name: 9 - And the test-outcome output should be Failed
+        if: always()
+        run: ./test/assert-values-match.sh --name "test-outcome output" --expected "Failed" --actual "${{ steps.ignore-failures.outputs.test-outcome }}"
+
+      - name: 9 - And the status check should match the inputs
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const assertStatusCheckExists = require('./test/assert-status-checks-exist.js');
+            const assertStatusCheckMatchesExpectations = require('./test/assert-status-check-matches-expectations.js');
+
+            const checkId = '${{ steps.ignore-failures.outputs.status-check-id }}';
+            const actualCheck = await assertStatusCheckExists(github, core, checkId);
+            const expectedBody = fs.readFileSync('${{ env.FAILING_MD_FILE }}', 'utf8');
+
+            const expectedValues = {
+              name: 'status check - ${{ env.IGNORE_FAILURES_REPORT_NAME }}'.toLowerCase(),
+              status: 'completed',
+              conclusion: 'neutral',
+              title: '${{ env.IGNORE_FAILURES_REPORT_NAME }}',
+              text: expectedBody
+            };
+            assertStatusCheckMatchesExpectations(core, actualCheck, expectedValues);
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                    TEST 10 - STATUS CHECK - ALLOW FAILURES                                    '
+        run: echo ""
+
+      - name: 10 - When process-jest-test-results is called with test failures & ignore-test-failures=false
+        if: always()
+        id: allow-failures
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          results-file: ${{ env.FAILING_RESULTS }}
+          report-name: ${{ env.ALLOW_FAILURES_REPORT_NAME }}
+          create-status-check: true
+          ignore-test-failures: false
+          create-pr-comment: false
+
+      - name: 10 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.allow-failures.outcome }}"
+
+      - name: 10 - And the status-check-id output should be populated
+        if: always()
+        run: ./test/assert-value-is-not-empty.sh --name "status-check-id output" --value "${{ steps.allow-failures.outputs.status-check-id }}"
+
+      - name: 10 - And the test-outcome output should be Failed
+        if: always()
+        run: ./test/assert-values-match.sh --name "test-outcome output" --expected "Failed" --actual "${{ steps.allow-failures.outputs.test-outcome }}"
+
+      - name: 10 - And the status check should match the inputs
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const assertStatusCheckExists = require('./test/assert-status-checks-exist.js');
+            const assertStatusCheckMatchesExpectations = require('./test/assert-status-check-matches-expectations.js');
+
+            const checkId = '${{ steps.allow-failures.outputs.status-check-id }}';
+            const actualCheck = await assertStatusCheckExists(github, core, checkId);
+            const expectedBody = fs.readFileSync('${{ env.FAILING_MD_FILE }}', 'utf8');
+
+            const expectedValues = {
+              name: 'status check - ${{ env.ALLOW_FAILURES_REPORT_NAME }}'.toLowerCase(),
+              status: 'completed',
+              conclusion: 'failure',
+              title: '${{ env.ALLOW_FAILURES_REPORT_NAME }}',
+              text: expectedBody
+            };
+            assertStatusCheckMatchesExpectations(core, actualCheck, expectedValues);
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+
+ 

@@ -3,36 +3,49 @@ const github = require('@actions/github');
 const markupPrefix = '<!-- im-open/process-jest-test-results -->';
 
 async function createStatusCheck(repoToken, markupData, conclusion, reportName) {
-  core.info(`Creating Status check for ${reportName}...`);
+  core.info(`\nCreating Status check for ${reportName}...`);
   const octokit = github.getOctokit(repoToken);
 
   const git_sha =
     github.context.eventName === 'pull_request' ? github.context.payload.pull_request.head.sha : github.context.sha;
-  core.info(`Creating status check for GitSha: ${git_sha} on a ${github.context.eventName} event.`);
-
+  const name = `status check - ${reportName.toLowerCase()}`;
+  const status = 'completed';
   const checkTime = new Date().toUTCString();
-  core.info(`Check time is: ${checkTime}`);
+  const summary = `This test run completed at \`${checkTime}\``;
 
+  let propMessage = `  Name: ${name}
+  GitSha: ${git_sha}
+  Event: ${github.context.eventName}
+  Status: ${status}
+  Conclusion: ${conclusion}
+  Check time: ${checkTime}
+  Title: ${reportName}
+  Summary: ${summary}`;
+  core.info(propMessage);
+
+  let statusCheckId;
   await octokit.rest.checks
     .create({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
-      name: `status check - ${reportName.toLowerCase()}`,
+      name: name,
       head_sha: git_sha,
-      status: 'completed',
+      status: status,
       conclusion: conclusion,
       output: {
         title: reportName,
-        summary: `This test run completed at \`${checkTime}\``,
+        summary: summary,
         text: markupData
       }
     })
     .then(response => {
-      core.info(`Created check: ${response.data.name}`);
+      core.info(`Created check: '${response.data.name}' with id '${response.data.id}'`);
+      statusCheckId = response.data.id;
     })
     .catch(error => {
       core.setFailed(`An error occurred trying to create the status check: ${error.message}`);
     });
+  return statusCheckId;
 }
 
 async function lookForExistingComment(octokit) {
@@ -82,6 +95,7 @@ async function createPrComment(repoToken, markupData, updateCommentIfOneExists) 
 
   if (existingCommentId) {
     core.info(`Updating existing PR #${existingCommentId} comment...`);
+
     await octokit.rest.issues
       .updateComment({
         owner: github.context.repo.owner,

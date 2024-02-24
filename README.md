@@ -81,13 +81,13 @@ For failed test runs you can expand each failed test and view more details about
 
 ## Outputs
 
-| Output                   | Description                                                                                                                                                                           |
-|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `test-outcome`           | Test outcome based on presence of failing tests: *Failed,Passed*<br/>If exceptions are thrown or if it exits early because of argument errors, this is set to Failed.                 |
-| `test-results-truncated` | Flag indicating whether test results were truncated due to markdown exceeding character limit of 65535.                                                                               |
-| `test-results-file-path` | File path for the file that contains the pre-truncated test results in markdown format.  This is the same output that is posted in the PR comment.                                    |
-| `status-check-ids`       | A comma-separated string of IDs for any status checks that were created. This is only set if `create-status-check` is `true` and one or more status checks were created successfully. |
-| `pr-comment-id`          | The ID of the PR comment that was created.  This is only set if `create-pr-comment` is `true` and a PR was created successfully.                                                      |
+| Output                   | Description                                                                                                                                                           |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `test-outcome`           | Test outcome based on presence of failing tests: *Failed,Passed*<br/>If exceptions are thrown or if it exits early because of argument errors, this is set to Failed. |
+| `test-results-truncated` | Flag indicating whether test results were truncated due to markdown exceeding character limit of 65535.                                                               |
+| `test-results-file-path` | File path for the file that contains the pre-truncated test results in markdown format.  This is the same output that is posted in the PR comment.                    |
+| `status-check-id`        | The ID of the Status Check that was created.  This is only set if `create-status-check` is `true` and a status check was created successfully.                        |
+| `pr-comment-id`          | The ID of the PR comment that was created.  This is only set if `create-pr-comment` is `true` and a PR was created successfully.                                      |
 
 ## Usage Examples
 
