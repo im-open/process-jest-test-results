@@ -31,10 +31,8 @@ function areThereAnyFailingTests(json) {
   return false;
 }
 
-function createResultsFile(results) {
-  const jobId = process.env.GITHUB_JOB || '';
-  const stepId = process.env.GITHUB_ACTION || '';
-  const resultsFileName = `test-results-${jobId}-${stepId}.md`;
+function createResultsFile(results, jobAndStep) {
+  const resultsFileName = `test-results-${jobAndStep}.md`;
 
   core.info(`\nWriting results to ${resultsFileName}`);
   let resultsFilePath = null;

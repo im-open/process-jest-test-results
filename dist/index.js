@@ -2397,10 +2397,8 @@ var require_utils2 = __commonJS({
       core2.info(`There are no failing tests.`);
       return false;
     }
-    function createResultsFile2(results) {
-      const jobId = process.env.GITHUB_JOB || '';
-      const stepId = process.env.GITHUB_ACTION || '';
-      const resultsFileName = `test-results-${jobId}-${stepId}.md`;
+    function createResultsFile2(results, jobAndStep2) {
+      const resultsFileName = `test-results-${jobAndStep2}.md`;
       core2.info(`
 Writing results to ${resultsFileName}`);
       let resultsFilePath = null;
@@ -16651,7 +16649,6 @@ var require_github2 = __commonJS({
   'src/github.js'(exports2, module2) {
     var core2 = require_core();
     var github = require_github();
-    var markupPrefix = '<!-- im-open/process-jest-test-results -->';
     async function createStatusCheck2(repoToken, markupData, conclusion, reportName2) {
       core2.info(`
 Creating Status check for ${reportName2}...`);
@@ -16695,7 +16692,7 @@ Creating Status check for ${reportName2}...`);
         });
       return statusCheckId;
     }
-    async function lookForExistingComment(octokit) {
+    async function lookForExistingComment(octokit, markupPrefix) {
       let commentId = null;
       await octokit
         .paginate(octokit.rest.issues.listComments, {
@@ -16722,19 +16719,22 @@ Creating Status check for ${reportName2}...`);
       core2.info(`Finished getting comments for PR #${github.context.payload.pull_request.number}.`);
       return commentId;
     }
-    async function createPrComment2(repoToken, markupData, updateCommentIfOneExists2) {
+    async function createPrComment2(repoToken, markupData, updateCommentIfOneExists2, commentIdentifier2) {
       if (github.context.eventName != 'pull_request') {
         core2.info('This event was not triggered by a pull_request.  No comment will be created or updated.');
         return;
       }
+      const markupPrefix = `<!-- im-open/process-jest-test-results ${commentIdentifier2} -->`;
       const octokit = github.getOctokit(repoToken);
+      let commentIdToReturn;
       let existingCommentId = null;
       if (updateCommentIfOneExists2) {
         core2.info('Checking for existing comment on PR....');
-        existingCommentId = await lookForExistingComment(octokit);
+        existingCommentId = await lookForExistingComment(octokit, markupPrefix);
       }
       if (existingCommentId) {
         core2.info(`Updating existing PR #${existingCommentId} comment...`);
+        commentIdToReturn = existingCommentId;
         await octokit.rest.issues
           .updateComment({
             owner: github.context.repo.owner,
@@ -16761,11 +16761,13 @@ ${markupData}`,
           })
           .then(response => {
             core2.info(`PR comment was created.  ID: ${response.data.id}.`);
+            commentIdToReturn = response.data.id;
           })
           .catch(error => {
             core2.setFailed(`An error occurred trying to create the PR comment: ${error.message}`);
           });
       }
+      return commentIdToReturn;
     }
     module2.exports = {
       createStatusCheck: createStatusCheck2,
@@ -19807,6 +19809,8 @@ var shouldCreateStatusCheck = core.getBooleanInput('create-status-check');
 var shouldCreatePRComment = core.getBooleanInput('create-pr-comment');
 var updateCommentIfOneExists = core.getBooleanInput('update-comment-if-one-exists');
 var reportName = core.getInput('report-name');
+var jobAndStep = `${process.env.GITHUB_ACTION}-${process.env.GITHUB_JOB}`;
+var commentIdentifier = core.getInput('comment-identifier') || jobAndStep;
 async function run() {
   try {
     const resultsJson = await readJsonResultsFromFile(resultsFile);
@@ -19816,8 +19820,8 @@ async function run() {
     }
     const failingTestsFound = areThereAnyFailingTests(resultsJson);
     core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
-    const markupData = getMarkupForJson(resultsJson, reportName);
-    const resultsFilePath = createResultsFile(markupData);
+    let markupData = getMarkupForJson(resultsJson, reportName);
+    const resultsFilePath = createResultsFile(markupData, jobAndStep);
     core.setOutput('test-results-file-path', resultsFilePath);
     if (shouldCreateStatusCheck) {
       let conclusion = 'success';
@@ -19828,7 +19832,21 @@ async function run() {
       core.setOutput('status-check-id', checkId);
     }
     if (shouldCreatePRComment) {
-      await createPrComment(token, markupData, updateCommentIfOneExists);
+      core.info(`
+Creating a PR comment with length ${markupData.length}...`);
+      const charLimit = 65535;
+      let truncated = false;
+      if (markupData.length > charLimit) {
+        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${markupData.length}/${charLimit}`;
+        core.info(message);
+        truncated = true;
+        const truncatedMessage = `Test results truncated due to character limit.  See full report in output.`;
+        markupData = `${truncatedMessage}
+${markupData.substring(0, charLimit - 100)}`;
+      }
+      core.setOutput('test-results-truncated', truncated);
+      const commentId = await createPrComment(token, markupData, updateCommentIfOneExists, commentIdentifier);
+      core.setOutput('pr-comment-id', commentId);
     }
   } catch (error) {
     if (error instanceof RangeError) {

@@ -7,7 +7,7 @@ description: |
 
 inputs:
   github-token:
-    description: 'Token used to interact with the repository.  Generally secrets.GITHUB_TOKEN.'
+    description: 'Token used to interact with the repository.  Generally `secrets.GITHUB_TOKEN.`'
     required: true
   results-file:
     description: 'The json test results file output by jest.'
@@ -16,22 +16,33 @@ inputs:
     description: 'The desired name of the report that is shown on the PR Comment and inside the Status Check.'
     required: true
     default: Jest Test Results
-  ignore-test-failures:
-    description: 'When set to true the status check is set to neutral when there are test failures and it will not block pull requests.'
-    required: false
-    default: 'false'
   create-status-check:
     description: 'Flag indicating whether a status check with test results should be generated.'
     required: true
     default: 'true'
+  ignore-test-failures:
+    description: |
+      If there are test failures, the check's conclusion is set to `neutral` so it will not block pull requests.
+      *Only applicable when `create-status-check` is true.*
+    required: false
+    default: 'false'
   create-pr-comment:
     description: 'Flag indicating whether a PR comment with test results should be generated.  When `true` the default behavior is to update an existing comment if one exists.'
     required: true
     default: 'true'
   update-comment-if-one-exists:
-    description: 'When `create-pr-comment` is true, this flag determines whether a new comment is created or if the action updates an existing comment if one is found which is the default behavior.'
+    description: |
+      This flag determines whether a new comment is created or if the action updates an existing comment (*if one is found*).
+      *Only applicable when `create-pr-comment` is true.*
     required: true
     default: 'true'
+  comment-identifier:
+    description: |
+      A unique identifier which will be added to the generated markdown as a comment (*it will not be visible in the PR comment*).
+      This identifier enables creating then updating separate results comments on the PR if more than one instance of this action is included in a single job.
+      This can be helpful when there are multiple test projects that run separately but are part of the same job.
+      *Only applicable when `create-pr-comment` is true.*
+    required: false
   timezone:
     description: 'IANA time zone name (e.g. America/Denver) to display dates in.  If timezone is not provided, dates will be shown in UTC.'
     required: false

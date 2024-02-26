@@ -17,6 +17,9 @@ const shouldCreatePRComment = core.getBooleanInput('create-pr-comment');
 const updateCommentIfOneExists = core.getBooleanInput('update-comment-if-one-exists');
 const reportName = core.getInput('report-name');
 
+const jobAndStep = `${process.env.GITHUB_ACTION}-${process.env.GITHUB_JOB}`;
+const commentIdentifier = core.getInput('comment-identifier') || jobAndStep;
+
 async function run() {
   try {
     const resultsJson = await readJsonResultsFromFile(resultsFile);
@@ -28,10 +31,10 @@ async function run() {
     const failingTestsFound = areThereAnyFailingTests(resultsJson);
     core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
 
-    const markupData = getMarkupForJson(resultsJson, reportName);
+    let markupData = getMarkupForJson(resultsJson, reportName);
 
     // Create this automatically to facilitate testing
-    const resultsFilePath = createResultsFile(markupData);
+    const resultsFilePath = createResultsFile(markupData, jobAndStep);
     core.setOutput('test-results-file-path', resultsFilePath);
 
     if (shouldCreateStatusCheck) {
@@ -44,9 +47,23 @@ async function run() {
     }
 
     if (shouldCreatePRComment) {
-      // GitHub API has a limit of 65535 characters for a comment so truncate the markup if we need to
+      core.info(`\nCreating a PR comment with length ${markupData.length}...`);
 
-      await createPrComment(token, markupData, updateCommentIfOneExists);
+      // GitHub API has a limit of 65535 characters for a comment so truncate the markup if we need to
+      const charLimit = 65535;
+      let truncated = false;
+      if (markupData.length > charLimit) {
+        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${markupData.length}/${charLimit}`;
+        core.info(message);
+
+        truncated = true;
+        const truncatedMessage = `Test results truncated due to character limit.  See full report in output.`;
+        markupData = `${truncatedMessage}\n${markupData.substring(0, charLimit - 100)}`;
+      }
+      core.setOutput('test-results-truncated', truncated);
+
+      const commentId = await createPrComment(token, markupData, updateCommentIfOneExists, commentIdentifier);
+      core.setOutput('pr-comment-id', commentId); // This is mainly for testing purposes
     }
   } catch (error) {
     if (error instanceof RangeError) {

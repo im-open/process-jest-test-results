@@ -64,8 +64,8 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     env:
-      FAILING_MD_FILE: './test/files/expected-results-for-failing-tests.md'
       PASSING_MD_FILE: './test/files/expected-results-for-passing-tests.md'
+      FAILING_MD_FILE: './test/files/expected-results-for-failing-tests.md'
       NO_TESTS_MD_FILE: './test/files/expected-results-for-no-tests.md'
 
     steps:
@@ -357,9 +357,9 @@ jobs:
       FAILING_TESTS_JSON: './test/files/failing.json'
       PASSING_TESTS_JSON: './test/files/passing.json'
       
-      NO_FAILURES_MARKUP: './test/files/expected-check-results-no-failures.md'
-      IGNORE_FAILURES_MARKUP: './test/files/expected-check-results-ignore-failures.md'
-      ALLOW_FAILURES_MARKUP: './test/files/expected-check-results-allow-failures.md'
+      NO_FAILURES_MD_FILE: './test/files/expected-check-results-no-failures.md'
+      IGNORE_FAILURES_MD_FILE: './test/files/expected-check-results-ignore-failures.md'
+      ALLOW_FAILURES_MD_FILE: './test/files/expected-check-results-allow-failures.md'
       
       NO_FAILURES_REPORT_NAME: 'No Failures Scenario'
       IGNORE_FAILURES_REPORT_NAME: 'Ignore Failures Scenario'
@@ -420,7 +420,7 @@ jobs:
 
             const checkId = '${{ steps.no-failures.outputs.status-check-id }}';
             const actualCheck = await assertStatusCheckExists(github, core, checkId);
-            const expectedBody = fs.readFileSync('${{ env.NO_FAILURES_MARKUP }}', 'utf8');
+            const expectedBody = fs.readFileSync('${{ env.NO_FAILURES_MD_FILE }}', 'utf8');
 
             const expectedValues = {
               name: 'status check - ${{ env.NO_FAILURES_REPORT_NAME }}'.toLowerCase(),
@@ -471,7 +471,7 @@ jobs:
 
             const checkId = '${{ steps.ignore-failures.outputs.status-check-id }}';
             const actualCheck = await assertStatusCheckExists(github, core, checkId);
-            const expectedBody = fs.readFileSync('${{ env.IGNORE_FAILURES_MARKUP }}', 'utf8');
+            const expectedBody = fs.readFileSync('${{ env.IGNORE_FAILURES_MD_FILE }}', 'utf8');
 
             const expectedValues = {
               name: 'status check - ${{ env.IGNORE_FAILURES_REPORT_NAME }}'.toLowerCase(),
@@ -522,7 +522,7 @@ jobs:
 
             const checkId = '${{ steps.allow-failures.outputs.status-check-id }}';
             const actualCheck = await assertStatusCheckExists(github, core, checkId);
-            const expectedBody = fs.readFileSync('${{ env.ALLOW_FAILURES_MARKUP }}', 'utf8');
+            const expectedBody = fs.readFileSync('${{ env.ALLOW_FAILURES_MD_FILE }}', 'utf8');
 
             const expectedValues = {
               name: 'status check - ${{ env.ALLOW_FAILURES_REPORT_NAME }}'.toLowerCase(),
@@ -553,12 +553,21 @@ jobs:
 
   test-pr-comments:
     runs-on: ubuntu-latest
-    if: 1 == 2
     env:
-      NO_FAILURES_DIR: './test/files/multiple-trx'
-      TRUNCATE_DIR: './test/files/truncate'
       EXISTING_COMMENT_ID: ''
       COMMENT_IDENTIFIER: 'existing-comment-${{ github.run_id }}'
+
+      TRUNCATE_TESTS_JSON: './test/files/truncate.json'
+      PASSING_TESTS_JSON: './test/files/passing.json'
+      
+      NO_FAILURES_MD_FILE: './test/files/expected-check-results-no-failures.md'
+      IGNORE_FAILURES_MD_FILE: './test/files/expected-check-results-ignore-failures.md'
+      ALLOW_FAILURES_MD_FILE: './test/files/expected-check-results-allow-failures.md'
+      
+      NO_FAILURES_REPORT_NAME: 'No Failures Scenario'
+      TRUNCATE_FAILURES_REPORT_NAME: 'Truncate Failures Scenario'
+
+      
 
     steps:
       - name: '-------------------------------------------------------------------------------------------------------------'
@@ -581,11 +590,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const commentIdentifier = '${{ env.GITHUB_JOB }}-${{ env.GITHUB_ACTION }}';
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: '<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->\nThis comment will be replaced soon.'
+              body: `<!-- im-open/process-jest-test-results ${commentIdentifier} -->\nThis comment will be replaced soon.`
             })
             .then(response => {
               core.exportVariable('EXISTING_COMMENT_ID', response.data.id);
@@ -606,8 +616,8 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          base-directory: ${{ env.NO_FAILURES_DIR }}
-          create-results-file: true # Keep this so we can compare the comment contents to the expected contents
+          results-file: ${{ env.PASSING_TESTS_JSON }}
+          report-name: ${{ env.NO_FAILURES_REPORT_NAME }}
           create-status-check: false
           create-pr-comment: true
           update-comment-if-one-exists: true
@@ -637,7 +647,7 @@ jobs:
             const commentId = '${{ steps.update-with-matching-prefix.outputs.pr-comment-id }}';
             const actualComment = await assertCommentExists(github, core, commentId);
 
-            const expectedBody = fs.readFileSync('./test-results.md', 'utf8');
+            const expectedBody = fs.readFileSync('${{ steps.update-with-matching-prefix.outputs.test-results-file-path }}', 'utf8');
             const expectedPrefix = '<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->';
             const expectedComment = {
               prefixAndBody: `${expectedPrefix}\n${expectedBody}`,
@@ -656,8 +666,8 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          base-directory: ${{ env.NO_FAILURES_DIR }}
-          create-results-file: true # Keep this so we can compare the comment contents to the expected contents
+          results-file: ${{ env.PASSING_TESTS_JSON }}
+          report-name: ${{ env.NO_FAILURES_REPORT_NAME }}
           create-status-check: false
           create-pr-comment: true
           update-comment-if-one-exists: true
@@ -687,7 +697,7 @@ jobs:
             const commentId = '${{ steps.update-without-matching-prefix.outputs.pr-comment-id }}';
             const actualComment = await assertCommentExists(github, core, commentId);
 
-            const expectedBody = fs.readFileSync('./test-results.md', 'utf8');
+            const expectedBody = fs.readFileSync('${{ steps.update-without-matching-prefix.outputs.test-results-file-path }}', 'utf8');
             const expectedPrefix = '<!-- im-open/process-jest-test-results different-identifier-${{ github.run_id }} -->';
             const expectedComment = {
               prefixAndBody: `${expectedPrefix}\n${expectedBody}`,
@@ -706,8 +716,8 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          base-directory: ${{ env.NO_FAILURES_DIR }}
-          create-results-file: true # Keep this so we can compare the comment contents to the expected contents
+          results-file: ${{ env.PASSING_TESTS_JSON }}
+          report-name: ${{ env.NO_FAILURES_REPORT_NAME }}
           create-status-check: false
           create-pr-comment: true
           update-comment-if-one-exists: false
@@ -736,8 +746,8 @@ jobs:
             const commentId = '${{ steps.matching-prefix-no-update.outputs.pr-comment-id }}';
             const actualComment = await assertCommentExists(github, core, commentId);
 
-            const expectedBody = fs.readFileSync('./test-results.md', 'utf8');
-            const expectedPrefix = '<!-- im-open/process-jest-test-results  -->';
+            const expectedBody = fs.readFileSync('${{ steps.matching-prefix-no-update.outputs.test-results-file-path }}', 'utf8');
+            const expectedPrefix = '<!-- im-open/process-jest-test-results ${{ env.GITHUB_JOB }}-${{ env.GITHUB_ACTION }} -->';
             const expectedComment = {
               prefixAndBody: `${expectedPrefix}\n${expectedBody}`,
               action: 'created'
@@ -755,8 +765,8 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          base-directory: ${{ env.TRUNCATE_DIR }}
-          create-results-file: true # Keep this so we can compare the comment contents to the expected contents
+          results-file: ${{ env.TRUNCATE_TESTS_JSON }}
+          report-name: ${{ env.TRUNCATE_FAILURES_REPORT_NAME }}
           create-status-check: false
           create-pr-comment: true
           update-comment-if-one-exists: true
@@ -786,7 +796,7 @@ jobs:
             const commentId = '${{ steps.truncate.outputs.pr-comment-id }}';
             const actualComment = await assertCommentExists(github, core, commentId);
 
-            const expectedBody = fs.readFileSync('./test-results.md', 'utf8');
+            const expectedBody = fs.readFileSync('${{ steps.truncate.outputs.test-results-file-path }}', 'utf8');
             const expectedPrefix = '<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->';
             const expectedComment = {
               prefixAndBody: `${expectedPrefix}\nTest results truncated due to character limit. See full report in output. \n${expectedBody}`,
