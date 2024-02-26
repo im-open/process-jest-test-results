@@ -354,15 +354,16 @@ jobs:
   test-status-checks:
     runs-on: ubuntu-latest
     env:
-      FAILING_RESULTS: './test/files/failing.json'
-      PASSING_RESULTS: './test/files/passing.json'
-      NO_RESULTS: './test/files/no-tests.json'
-      FAILING_MD_FILE: './test/files/expected-results-for-failing-tests.md'
-      PASSING_MD_FILE: './test/files/expected-results-for-passing-tests.md'
-      NO_TESTS_MD_FILE: './test/files/expected-results-for-no-tests.md'
-      NO_FAILURES_REPORT_NAME: 'No Failing Tests'
-      IGNORE_FAILURES_REPORT_NAME: 'Ignore Failing Tests'
-      ALLOW_FAILURES_REPORT_NAME: 'Allow Failing Tests'
+      FAILING_TESTS_JSON: './test/files/failing.json'
+      PASSING_TESTS_JSON: './test/files/passing.json'
+      
+      NO_FAILURES_MARKUP: './test/files/expected-check-results-no-failures.md'
+      IGNORE_FAILURES_MARKUP: './test/files/expected-check-results-ignore-failures.md'
+      ALLOW_FAILURES_MARKUP: './test/files/expected-check-results-allow-failures.md'
+      
+      NO_FAILURES_REPORT_NAME: 'No Failures Scenario'
+      IGNORE_FAILURES_REPORT_NAME: 'Ignore Failures Scenario'
+      ALLOW_FAILURES_REPORT_NAME: 'Allow Failures Scenario'
       
     steps:
       - name: '-------------------------------------------------------------------------------------------------------------'
@@ -391,7 +392,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: ${{ env.PASSING_RESULTS }}
+          results-file: ${{ env.PASSING_TESTS_JSON }}
           report-name: ${{ env.NO_FAILURES_REPORT_NAME }}
           create-status-check: true
           create-pr-comment: false
@@ -414,12 +415,12 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const assertStatusCheckExists = require('./test/assert-status-checks-exist.js');
+            const assertStatusCheckExists = require('./test/assert-status-check-exists.js');
             const assertStatusCheckMatchesExpectations = require('./test/assert-status-check-matches-expectations.js');
 
             const checkId = '${{ steps.no-failures.outputs.status-check-id }}';
             const actualCheck = await assertStatusCheckExists(github, core, checkId);
-            const expectedBody = fs.readFileSync('${{ env.PASSING_MD_FILE }}', 'utf8');
+            const expectedBody = fs.readFileSync('${{ env.NO_FAILURES_MARKUP }}', 'utf8');
 
             const expectedValues = {
               name: 'status check - ${{ env.NO_FAILURES_REPORT_NAME }}'.toLowerCase(),
@@ -441,7 +442,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: ${{ env.FAILING_RESULTS }}
+          results-file: ${{ env.FAILING_TESTS_JSON }}
           report-name: ${{ env.IGNORE_FAILURES_REPORT_NAME }}
           create-status-check: true
           ignore-test-failures: true
@@ -465,12 +466,12 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const assertStatusCheckExists = require('./test/assert-status-checks-exist.js');
+            const assertStatusCheckExists = require('./test/assert-status-check-exists.js');
             const assertStatusCheckMatchesExpectations = require('./test/assert-status-check-matches-expectations.js');
 
             const checkId = '${{ steps.ignore-failures.outputs.status-check-id }}';
             const actualCheck = await assertStatusCheckExists(github, core, checkId);
-            const expectedBody = fs.readFileSync('${{ env.FAILING_MD_FILE }}', 'utf8');
+            const expectedBody = fs.readFileSync('${{ env.IGNORE_FAILURES_MARKUP }}', 'utf8');
 
             const expectedValues = {
               name: 'status check - ${{ env.IGNORE_FAILURES_REPORT_NAME }}'.toLowerCase(),
@@ -492,7 +493,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: ${{ env.FAILING_RESULTS }}
+          results-file: ${{ env.FAILING_TESTS_JSON }}
           report-name: ${{ env.ALLOW_FAILURES_REPORT_NAME }}
           create-status-check: true
           ignore-test-failures: false
@@ -516,12 +517,12 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const assertStatusCheckExists = require('./test/assert-status-checks-exist.js');
+            const assertStatusCheckExists = require('./test/assert-status-check-exists.js');
             const assertStatusCheckMatchesExpectations = require('./test/assert-status-check-matches-expectations.js');
 
             const checkId = '${{ steps.allow-failures.outputs.status-check-id }}';
             const actualCheck = await assertStatusCheckExists(github, core, checkId);
-            const expectedBody = fs.readFileSync('${{ env.FAILING_MD_FILE }}', 'utf8');
+            const expectedBody = fs.readFileSync('${{ env.ALLOW_FAILURES_MARKUP }}', 'utf8');
 
             const expectedValues = {
               name: 'status check - ${{ env.ALLOW_FAILURES_REPORT_NAME }}'.toLowerCase(),
@@ -534,5 +535,282 @@ jobs:
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
+      - name: '                                                   TEARDOWN                                                  '
+        run: echo ""
 
- 
+      - name: Teardown - Modify failing Status Check conclusion
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const updateFailingStatusCheck = require('./test/update-failing-status-check.js');
+
+            await updateFailingStatusCheck(github, core, '${{ steps.allow-failures.outputs.status-check-id }}');
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+
+  test-pr-comments:
+    runs-on: ubuntu-latest
+    if: 1 == 2
+    env:
+      NO_FAILURES_DIR: './test/files/multiple-trx'
+      TRUNCATE_DIR: './test/files/truncate'
+      EXISTING_COMMENT_ID: ''
+      COMMENT_IDENTIFIER: 'existing-comment-${{ github.run_id }}'
+
+    steps:
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                                    SETUP                                                    '
+        run: echo ""
+
+      - name: Setup - Fail test job if fork
+        run: |
+          if [ "${{ github.event.pull_request.head.repo.fork }}" == "true" ]; then
+            echo "This test job requires the `pull_request: write` scope on the GITHUB_TOKEN which PRs from forks do not have.  Before this PR can be merged, the tests should be run on an intermediate branch created by repository owners."
+            exit 1
+          fi
+
+      - name: Setup - Checkout the action
+        uses: actions/checkout@v4
+
+      - name: Setup - Create a comment that can be updated
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->\nThis comment will be replaced soon.'
+            })
+            .then(response => {
+              core.exportVariable('EXISTING_COMMENT_ID', response.data.id);
+            })
+            .catch(error => {
+              core.setFailed(`An error occurred in the setup step while creating a comment: ${error.message}`);
+            });
+            await new Promise(r => setTimeout(r, 5 * 1000));
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                              TEST 11 - PR COMMENT - UPDATE W/ MATCHING PREFIX                               '
+        run: echo ""
+
+      - name: 11 - When process-jest-test-results is called with updateComment=true and there is a comment with matching prefix
+        if: always()
+        id: update-with-matching-prefix
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          base-directory: ${{ env.NO_FAILURES_DIR }}
+          create-results-file: true # Keep this so we can compare the comment contents to the expected contents
+          create-status-check: false
+          create-pr-comment: true
+          update-comment-if-one-exists: true
+          comment-identifier: ${{ env.COMMENT_IDENTIFIER }}
+
+      - name: 11 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.update-with-matching-prefix.outcome }}"
+
+      - name: 11 - And the pr-comment-id output should match the existing comment id
+        if: always()
+        run: ./test/assert-values-match.sh --name "pr-comment-id output" --expected "${{ env.EXISTING_COMMENT_ID }}" --actual "${{ steps.update-with-matching-prefix.outputs.pr-comment-id }}"
+
+      - name: 11 - And the test-results-truncated output should be false
+        if: always()
+        run: ./test/assert-values-match.sh --name "test-results-truncated output" --expected "false" --actual "${{ steps.update-with-matching-prefix.outputs.test-results-truncated }}"
+
+      - name: 11 - And the pr-comment should match the match the expected values
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const assertCommentExists = require('./test/assert-pr-comment-exists.js');
+            const assertCommentMatchesExpectations = require('./test/assert-pr-comment-matches-expectations.js');
+
+            const commentId = '${{ steps.update-with-matching-prefix.outputs.pr-comment-id }}';
+            const actualComment = await assertCommentExists(github, core, commentId);
+
+            const expectedBody = fs.readFileSync('./test-results.md', 'utf8');
+            const expectedPrefix = '<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->';
+            const expectedComment = {
+              prefixAndBody: `${expectedPrefix}\n${expectedBody}`,
+              action: 'updated'
+            };
+            assertCommentMatchesExpectations(core, actualComment, expectedComment);
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                              TEST 12 - PR COMMENT - UPDATE W/O MATCHING PREFIX                              '
+        run: echo ""
+
+      - name: 12 - When process-jest-test-results is called with updateComment=true but there is no comment with matching prefix
+        if: always()
+        id: update-without-matching-prefix
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          base-directory: ${{ env.NO_FAILURES_DIR }}
+          create-results-file: true # Keep this so we can compare the comment contents to the expected contents
+          create-status-check: false
+          create-pr-comment: true
+          update-comment-if-one-exists: true
+          comment-identifier: 'different-identifier-${{ github.run_id }}'
+
+      - name: 12 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.update-without-matching-prefix.outcome }}"
+
+      - name: 12 - And the pr-comment-id output should be different than the existing comment id
+        if: always()
+        run: ./test/assert-values-do-not-match.sh --name "pr-comment-id output" --value1 "${{ env.EXISTING_COMMENT_ID }}" --value2 "${{ steps.update-without-matching-prefix.outputs.pr-comment-id }}"
+
+      - name: 12 - And the test-results-truncated output should be false
+        if: always()
+        run: ./test/assert-values-match.sh --name "test-results-truncated output" --expected "false" --actual "${{ steps.update-without-matching-prefix.outputs.test-results-truncated }}"
+
+      - name: 12 - And the pr-comment should match the expected values
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const assertCommentExists = require('./test/assert-pr-comment-exists.js');
+            const assertCommentMatchesExpectations = require('./test/assert-pr-comment-matches-expectations.js');
+
+            const commentId = '${{ steps.update-without-matching-prefix.outputs.pr-comment-id }}';
+            const actualComment = await assertCommentExists(github, core, commentId);
+
+            const expectedBody = fs.readFileSync('./test-results.md', 'utf8');
+            const expectedPrefix = '<!-- im-open/process-jest-test-results different-identifier-${{ github.run_id }} -->';
+            const expectedComment = {
+              prefixAndBody: `${expectedPrefix}\n${expectedBody}`,
+              action: 'created'
+            };
+            assertCommentMatchesExpectations(core, actualComment, expectedComment);
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                       TEST 13 - PR COMMENT - NO UPDATE                                      '
+        run: echo ""
+
+      - name: 13 - When process-jest-test-results is called with updateComment=false
+        if: always()
+        id: matching-prefix-no-update
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          base-directory: ${{ env.NO_FAILURES_DIR }}
+          create-results-file: true # Keep this so we can compare the comment contents to the expected contents
+          create-status-check: false
+          create-pr-comment: true
+          update-comment-if-one-exists: false
+
+      - name: 13 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.matching-prefix-no-update.outcome }}"
+
+      - name: 13 - And the pr-comment-id output should be different than the existing comment id
+        if: always()
+        run: ./test/assert-values-do-not-match.sh --name "pr-comment-id output" --value1 "${{ env.EXISTING_COMMENT_ID }}" --value2 "${{ steps.matching-prefix-no-update.outputs.pr-comment-id }}"
+
+      - name: 13 - And the test-results-truncated output should be false
+        if: always()
+        run: ./test/assert-values-match.sh --name "test-results-truncated output" --expected "false" --actual "${{ steps.matching-prefix-no-update.outputs.test-results-truncated }}"
+
+      - name: 13 - And the pr-comment should match the expected values
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const assertCommentExists = require('./test/assert-pr-comment-exists.js');
+            const assertCommentMatchesExpectations = require('./test/assert-pr-comment-matches-expectations.js');
+
+            const commentId = '${{ steps.matching-prefix-no-update.outputs.pr-comment-id }}';
+            const actualComment = await assertCommentExists(github, core, commentId);
+
+            const expectedBody = fs.readFileSync('./test-results.md', 'utf8');
+            const expectedPrefix = '<!-- im-open/process-jest-test-results  -->';
+            const expectedComment = {
+              prefixAndBody: `${expectedPrefix}\n${expectedBody}`,
+              action: 'created'
+            };
+            assertCommentMatchesExpectations(core, actualComment, expectedComment);
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                       TEST 14 - PR COMMENT - TRUNCATE                                       '
+        run: echo ""
+
+      - name: 14 - When process-jest-test-results is called with a large comment that needs to be truncated
+        if: always()
+        id: truncate
+        uses: ./
+        with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
+          base-directory: ${{ env.TRUNCATE_DIR }}
+          create-results-file: true # Keep this so we can compare the comment contents to the expected contents
+          create-status-check: false
+          create-pr-comment: true
+          update-comment-if-one-exists: true
+          comment-identifier: ${{ env.COMMENT_IDENTIFIER }}
+
+      - name: 14 - Then the action outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.truncate.outcome }}"
+
+      - name: 14 - And the pr-comment-id output should match the existing comment id
+        if: always()
+        run: ./test/assert-values-match.sh --name "pr-comment-id output" --expected "${{ env.EXISTING_COMMENT_ID }}" --actual "${{ steps.truncate.outputs.pr-comment-id }}"
+
+      - name: 14 - And the test-results-truncated output should be true
+        if: always()
+        run: ./test/assert-values-match.sh --name "test-results-truncated output" --expected "true" --actual "${{ steps.truncate.outputs.test-results-truncated }}"
+
+      - name: 14 - And the pr-comment should match the expected values
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const assertCommentExists = require('./test/assert-pr-comment-exists.js');
+            const assertCommentMatchesExpectations = require('./test/assert-pr-comment-matches-expectations.js');
+
+            const commentId = '${{ steps.truncate.outputs.pr-comment-id }}';
+            const actualComment = await assertCommentExists(github, core, commentId);
+
+            const expectedBody = fs.readFileSync('./test-results.md', 'utf8');
+            const expectedPrefix = '<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->';
+            const expectedComment = {
+              prefixAndBody: `${expectedPrefix}\nTest results truncated due to character limit. See full report in output. \n${expectedBody}`,
+              action: 'updated'
+            };
+
+            assertCommentMatchesExpectations(core, actualComment, expectedComment);
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
+      - name: '                                                   TEARDOWN                                                  '
+        run: echo ""
+
+      - name: Teardown - Delete PR Comments
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const deletePrComment = require('./test/delete-pr-comment.js');
+
+            await deletePrComment(github, core, '${{ env.EXISTING_COMMENT_ID }}');
+            await deletePrComment(github, core, '${{ steps.matching-prefix-no-update.outputs.pr-comment-id }}');
+            await deletePrComment(github, core, '${{ steps.update-without-matching-prefix.outputs.pr-comment-id }}');
+
+      - name: '-------------------------------------------------------------------------------------------------------------'
+        run: echo ""
