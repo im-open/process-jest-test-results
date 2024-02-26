@@ -1,4 +1,25 @@
 module.exports = async (core, comment, expectedValues) => {
+  function assertLengthsAreTheSame(prCommentLength, testResultsMdLength) {
+    core.info(`\n\tPR Comment length:\t\t'${prCommentLength}'`);
+    core.info(`\ttest-results.md length: '${testResultsMdLength}'`);
+
+    if (prCommentLength != testResultsMdLength) {
+      core.setFailed(`\tThe lengths do not match, which is not expected.`);
+    } else {
+      core.info(`\tThe lengths match, which is expected.`);
+    }
+  }
+  function assertLengthsAreNotTheSame(prCommentLength, testResultsMdLength) {
+    core.info(`\n\tPR Comment length:\t\t'${prCommentLength}'`);
+    core.info(`\ttest-results.md length: '${testResultsMdLength}'`);
+
+    if (prCommentLength != testResultsMdLength) {
+      core.info(`\tThe lengths do not match, which is expected.`);
+    } else {
+      core.setFailed(`\tThe lengths match, which is not expected.`);
+    }
+  }
+
   function assertCreatedAndUpdatedMatch(created, updated) {
     core.info(`\n\tCreated: '${created}'`);
     core.info(`\tUpdated:   '${updated}'`);
@@ -21,24 +42,45 @@ module.exports = async (core, comment, expectedValues) => {
     }
   }
 
-  function assertValueContainsSubstring(variableName, value, substring) {
-    core.startGroup(`\n\tChecking ${variableName} contains the substring.`);
+  function assertValueContainsSubstring(valueName, value, substringName, substring) {
     if (value.includes(substring)) {
-      core.info(`\tThe ${variableName} string contains the substring.`);
+      core.info(`\n\tChecking ${valueName} contains the ${substringName} substring.`);
+      core.info(`\tThe ${valueName} string contains the substring.`);
     } else {
-      core.setFailed(`\tThe ${variableName} string does not contain the substring.`);
-      core.info(`\n\tExpected ${variableName}: '${value}'`);
-      core.info(`\tActual ${variableName}:   '${substring}'`);
+      core.info(`\n\tChecking ${valueName} contains the ${substringName} substring.`);
+      core.setFailed(`\tThe ${valueName} string does not contain the ${substringName} substring.`);
+      core.startGroup('\tString and substring Details');
+      core.info(`\n\t${valueName}: '${value}'`);
+      core.info(`\t${substringName}: '${substring}'`);
+      core.endGroup();
     }
-    core.endGroup();
   }
 
   function validateProps() {
     core.info(`\nAsserting that PR Comment properties match the expected values.`);
     core.info(`Comment ID: ${comment.id}`);
 
-    assertValueContainsSubstring('Body', expectedValues['prefixAndBody'], comment.body);
+    const expectedPrefix = expectedValues.expectedPrefix;
+    const expectedBody = expectedValues.expectedBody;
+    const actualTestResultsMd = expectedValues.actualTestResults;
+    const actualTestResultsMdWithPrefix = `${expectedPrefix}\n${actualTestResultsMd}`;
+    const actualComment = comment.body;
 
+    // The actual comment body should contain the expected prefix and the expected body
+    assertValueContainsSubstring('PR Comment', actualComment, 'Expected Prefix', expectedPrefix);
+    assertValueContainsSubstring('PR Comment', actualComment, 'Expected Body', expectedBody);
+
+    // The test-results.md file is the whole markdown before truncation so
+    // it should contain the substring of the actual comment
+    assertValueContainsSubstring('test-results.md', actualTestResultsMdWithPrefix, 'Actual Comment Body', actualComment);
+
+    if (expectedValues.truncated) {
+      assertLengthsAreNotTheSame(actualComment.length, actualTestResultsMdWithPrefix.length);
+    } else {
+      assertLengthsAreTheSame(actualComment.length, actualTestResultsMdWithPrefix.length);
+    }
+
+    // Doublecheck the timestamps are generally what we expected based on created/updated status
     switch (expectedValues.action) {
       case 'updated':
         assertUpdatedIsAfterCreated(comment.createdAt, comment.updatedAt);
@@ -53,5 +95,4 @@ module.exports = async (core, comment, expectedValues) => {
   }
 
   validateProps();
-  await new Promise(r => setTimeout(r, 5 * 1000));
 };

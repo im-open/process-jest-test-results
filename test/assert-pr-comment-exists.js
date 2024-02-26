@@ -1,4 +1,4 @@
-module.exports = async (github, core, commentId) => {
+module.exports = async (github, context, core, commentId) => {
   core.info(`\nAsserting that PR Comment with the following id exists: '${commentId}'`);
 
   let actualComment;
@@ -8,8 +8,8 @@ module.exports = async (github, core, commentId) => {
   }
 
   const commentResponse = await github.rest.issues.getComment({
-    owner: 'im-open',
-    repo: 'process-jest-test-results',
+    owner: context.repo.owner,
+    repo: context.repo.repo,
     comment_id: commentId.trim()
   });
 
@@ -26,8 +26,9 @@ module.exports = async (github, core, commentId) => {
       updatedAt: rawComment.updated_at,
       issueUrl: rawComment.issue_url
     };
-    core.info(`Comment ${actualComment.id} details:`);
+    core.startGroup(`Comment ${actualComment.id} details:`);
     console.log(actualComment);
+    core.endGroup();
   }
 
   return actualComment;

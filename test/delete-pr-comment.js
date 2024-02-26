@@ -1,4 +1,4 @@
-module.exports = async (github, core, commentId) => {
+module.exports = async (github, context, core, commentId) => {
   core.info(`\nDeleting comment '${commentId}'`);
 
   if (!commentId) {
@@ -7,8 +7,8 @@ module.exports = async (github, core, commentId) => {
 
   await github
     .request(`DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}`, {
-      owner: 'im-open',
-      repo: 'process-jest-test-results',
+      owner: context.repo.owner,
+      repo: context.repo.repo,
       comment_id: commentId,
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'

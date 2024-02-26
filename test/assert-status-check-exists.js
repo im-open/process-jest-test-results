@@ -1,4 +1,4 @@
-module.exports = async (github, core, statusCheckId) => {
+module.exports = async (github, context, core, statusCheckId) => {
   core.info(`\nAsserting that status check '${statusCheckId} exists`);
 
   if (!statusCheckId || statusCheckId.trim() === '') {
@@ -9,8 +9,8 @@ module.exports = async (github, core, statusCheckId) => {
   let statusCheckToReturn;
   await github.rest.checks
     .get({
-      owner: 'im-open',
-      repo: 'process-jest-test-results',
+      owner: context.repo.owner,
+      repo: context.repo.repo,
       check_run_id: statusCheckId.trim()
     })
     .then(checkResponse => {
