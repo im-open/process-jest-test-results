@@ -4,7 +4,7 @@ module.exports = async (core, actualComment, actualTestResults, expectedComment)
     core.info(`\tUpdated:   '${updated}'`);
 
     if (created != updated) {
-      core.setFailed(`\tThe created and updated dates should match, which is NOT expected.`);
+      core.setFailed(`\tThe created and updated dates do not match, which is NOT expected.`);
     } else {
       core.info(`\tThe created and updated dates match, which is expected.`);
     }
