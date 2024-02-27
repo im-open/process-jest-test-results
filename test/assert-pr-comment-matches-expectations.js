@@ -66,11 +66,11 @@ module.exports = async (core, actualComment, actualTestResults, expectedComment)
     const isTruncated = expectedComment.truncated;
 
     // Check the actual comment's body
-    assertValueContainsSubstring('PR Comment', actualComment, 'Expected Prefix', expectedPrefix);
+    assertValueContainsSubstring('PR Comment', actualComment.body, 'Expected Prefix', expectedPrefix);
     if (isTruncated) {
-      assertValueContainsSubstring('PR Comment', actualComment, 'Expected Body', expectedTruncatedMd);
+      assertValueContainsSubstring('PR Comment', actualComment.body, 'Expected Body', expectedTruncatedMd);
     } else {
-      assertValueContainsSubstring('PR Comment', actualComment, 'Expected Body', expectedFullMd);
+      assertValueContainsSubstring('PR Comment', actualComment.body, 'Expected Body', expectedFullMd);
     }
 
     // Check the test-results.md file

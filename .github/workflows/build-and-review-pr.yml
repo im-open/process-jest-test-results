@@ -21,18 +21,15 @@ on:
   #   without disabling that requirement.  If we have a status check that is always produced,
   #   we can also use that to require all branches be up to date before they are merged.
 
-
 env:
   EMPTY_JSON_RESULTS_FILE: './test/input-files/empty-results.json'
   FAILING_JSON_RESULTS_FILE: './test/input-files/failing.json'
   NO_TESTS_JSON_RESULTS_FILE: './test/input-files/no-tests.json'
   PASSING_JSON_RESULTS_FILE: './test/input-files/passing.json'
   TRUNCATE_JSON_RESULTS_FILE: './test/input-files/truncate.json'
-  
 
 jobs:
   build-and-review-pr:
-    if: 1 == 2
     # This reusable workflow will check to see if an action's source code has changed based on
     # whether the PR includes files that match the files-with-code arg or are in one of the
     # dirs-with-code directories.  If there are source code changes, this reusable workflow
@@ -70,9 +67,8 @@ jobs:
       # The npm script to run to build the action.  This is typically 'npm run build' if the
       # action needs to be compiled.  For composite-run-steps actions this is typically empty.
       build-command: 'npm run build'
-  
+
   unit-tests:
-    if: 1 == 2
     runs-on: ubuntu-latest
     env:
       PASSING_MD_FILE: './test/expected-markdown/unit-tests/passing-tests.md'
@@ -174,8 +170,7 @@ jobs:
           ./test/assert-value-is-empty.sh --name "test-results-file-path output" --value "${{ steps.file-does-not-exist.outputs.test-results-file-path }}"
           ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.file-does-not-exist.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.file-does-not-exist.outputs.pr-comment-id }}"
-      
-      
+
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
       - name: '                                       TEST 4 - RESULTS_FILE IS EMPTY                                        '
@@ -207,7 +202,7 @@ jobs:
           ./test/assert-value-is-empty.sh --name "test-results-file-path output" --value "${{ steps.empty-file.outputs.test-results-file-path }}"
           ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.empty-file.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.empty-file.outputs.pr-comment-id }}"
-      
+
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
       - name: '                                           TEST 5 - PASSING TESTS                                            '
@@ -233,7 +228,7 @@ jobs:
         if: always()
         run: |
           ./test/assert-values-match.sh --name "test-outcome output" --expected 'Passed' --actual "${{ steps.passing-tests.outputs.test-outcome }}"
-      
+
       - name: 5 - And the 'test-results-file-path output' should be populated
         if: always()
         run: ./test/assert-value-is-not-empty.sh --name "test-results-file-path output" --value "${{ steps.passing-tests.outputs.test-results-file-path }}"
@@ -244,7 +239,7 @@ jobs:
           ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.passing-tests.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.passing-tests.outputs.pr-comment-id }}"
           ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.passing-tests.outputs.test-results-truncated }}"
-      
+
       - name: 5 - And the contents of test-results.md file should match the contents of ${{ env.PASSING_MD_FILE }} file
         if: always()
         run: |
@@ -254,7 +249,7 @@ jobs:
           #  - The badge has the right count/status/color
           #  - The Duration stats are included in the report
           #  - The Counter stats are included in the report
-          
+
           expectedFileName="${{ env.PASSING_MD_FILE }}"
           actualFileName="${{ steps.passing-tests.outputs.test-results-file-path }}"
           ./test/assert-file-contents-match.sh --expectedFileName $expectedFileName --actualFileName $actualFileName
@@ -284,7 +279,7 @@ jobs:
         if: always()
         run: |
           ./test/assert-values-match.sh --name "test-outcome output" --expected 'Failed' --actual "${{ steps.failing-tests.outputs.test-outcome }}"
-      
+
       - name: 6 - And the 'test-results-file-path output' should be populated
         if: always()
         run: ./test/assert-value-is-not-empty.sh --name "test-results-file-path output" --value "${{ steps.failing-tests.outputs.test-results-file-path }}"
@@ -295,7 +290,7 @@ jobs:
           ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.failing-tests.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.failing-tests.outputs.pr-comment-id }}"
           ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.failing-tests.outputs.test-results-truncated }}"
-      
+
       - name: 6 - And the contents of test-results.md file should match the contents of ${{ env.FAILING_MD_FILE }} file
         if: always()
         run: |
@@ -310,7 +305,7 @@ jobs:
           expectedFileName="${{ env.FAILING_MD_FILE }}"
           actualFileName="${{ steps.failing-tests.outputs.test-results-file-path }}"
           ./test/assert-file-contents-match.sh --expectedFileName $expectedFileName --actualFileName $actualFileName
-      
+
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
       - name: '                                         TEST 7 - NO TESTS REPORTED                                          '
@@ -326,7 +321,7 @@ jobs:
           report-name: 'Missing Test Results'
           create-status-check: false
           create-pr-comment: false
-          
+
       - name: 7 - Then the action outcome should be success
         if: always()
         run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.no-tests.outcome }}"
@@ -335,7 +330,7 @@ jobs:
         if: always()
         run: |
           ./test/assert-values-match.sh --name "test-outcome output" --expected 'Passed' --actual "${{ steps.no-tests.outputs.test-outcome }}"
-      
+
       - name: 7 - And the 'test-results-file-path output' should be populated
         if: always()
         run: ./test/assert-value-is-not-empty.sh --name "test-results-file-path output" --value "${{ steps.no-tests.outputs.test-results-file-path }}"
@@ -346,7 +341,7 @@ jobs:
           ./test/assert-value-is-empty.sh --name "status-check-id output" --value "${{ steps.no-tests.outputs.status-check-id }}"
           ./test/assert-value-is-empty.sh --name "pr-comment-id output" --value "${{ steps.no-tests.outputs.pr-comment-id }}"
           ./test/assert-value-is-empty.sh --name "test-results-truncated output" --value "${{ steps.no-tests.outputs.test-results-truncated }}"
-      
+
       - name: 7 - And the contents of test-results.md file should match the contents of ${{ env.NO_TESTS_MD_FILE }} file
         if: always()
         run: |
@@ -363,17 +358,16 @@ jobs:
           ./test/assert-file-contents-match.sh --expectedFileName $expectedFileName --actualFileName $actualFileName
 
   test-status-checks:
-    if: 1 == 2
     runs-on: ubuntu-latest
     env:
       NO_FAILURES_MD_FILE: './test/expected-markdown/status-checks/no-failures.md'
       IGNORE_FAILURES_MD_FILE: './test/expected-markdown/status-checks/ignore-failures.md'
       ALLOW_FAILURES_MD_FILE: './test/expected-markdown/status-checks/allow-failures.md'
-      
+
       NO_FAILURES_REPORT_NAME: 'No Failures Scenario'
       IGNORE_FAILURES_REPORT_NAME: 'Ignore Failures Scenario'
       ALLOW_FAILURES_REPORT_NAME: 'Allow Failures Scenario'
-      
+
     steps:
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
@@ -571,7 +565,7 @@ jobs:
       NO_UPDATE_MD_FILE: './test/expected-markdown/pr-comments/no-update.md'
       TRUNCATE_FULL_MD_FILE: './test/expected-markdown/pr-comments/truncate-full-markdown.md'
       TRUNCATE_TRUNCATED_MD_FILE: './test/expected-markdown/pr-comments/truncate-truncated-markdown.md'
-      
+
       UPDATE_WITH_MATCHING_PREFIX_REPORT_NAME: 'Update Comment with Matching Prefix Scenario'
       UPDATE_WITHOUT_MATCHING_PREFIX_REPORT_NAME: 'Update Comment but no Matching Prefix Scenario'
       NO_UPDATE_REPORT_NAME: 'Do Not Update Comment Scenario'
@@ -665,14 +659,14 @@ jobs:
 
             const expectedMarkdown = fs.readFileSync('${{ env.UPDATE_WITH_MATCHING_PREFIX_MD_FILE }}', 'utf8');
             const actualTestResults = fs.readFileSync('${{ steps.update-with-matching-prefix.outputs.test-results-file-path }}', 'utf8');
-            
+
             const expectedComment = {
               prefix: '<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->',
               fullMarkdown: expectedMarkdown,
               action: 'updated',
               truncated: false
             };
-            assertCommentMatchesExpectations(core, actualComment.body, actualTestResults, expectedComment);
+            assertCommentMatchesExpectations(core, actualComment, actualTestResults, expectedComment);
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
@@ -718,14 +712,14 @@ jobs:
 
             const expectedMarkdown = fs.readFileSync('${{ env.UPDATE_WITHOUT_MATCHING_PREFIX_MD_FILE }}', 'utf8');
             const actualTestResults = fs.readFileSync('${{ steps.update-without-matching-prefix.outputs.test-results-file-path }}', 'utf8');
-            
+
             const expectedComment = {
               prefix: '<!-- im-open/process-jest-test-results different-identifier-${{ github.run_id }} -->',
               fullMarkdown: expectedMarkdown,
               action: 'created',
               truncated: false
             };
-            assertCommentMatchesExpectations(core, actualComment.body, actualTestResults, expectedComment);
+            assertCommentMatchesExpectations(core, actualComment, actualTestResults, expectedComment);
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
@@ -770,14 +764,14 @@ jobs:
 
             const expectedMarkdown = fs.readFileSync('${{ env.NO_UPDATE_MD_FILE }}', 'utf8');
             const actualTestResults = fs.readFileSync('${{ steps.matching-prefix-no-update.outputs.test-results-file-path }}', 'utf8');
-            
+
             const expectedComment = {
-              prefix: `<!-- im-open/process-jest-test-results ${process.env.GITHUB_JOB}_${process.env.GITHUB_ACTION} -->`,
+              prefix: `<!-- im-open/process-jest-test-results test-pr-comments_matching-prefix-no-update -->`,
               fullMarkdown: expectedMarkdown,
               action: 'created',
               truncated: false
             };
-            assertCommentMatchesExpectations(core, actualComment.body, actualTestResults, expectedComment);
+            assertCommentMatchesExpectations(core, actualComment, actualTestResults, expectedComment);
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
@@ -833,7 +827,7 @@ jobs:
               truncated: true,
               truncatedMarkdown: expectedTruncatedMarkdown,
             };
-            assertCommentMatchesExpectations(core, actualComment.body, actualTestResults, expectedComment);
+            assertCommentMatchesExpectations(core, actualComment, actualTestResults, expectedComment);
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
@@ -848,9 +842,9 @@ jobs:
             const fs = require('fs');
             const deletePrComment = require('./test/delete-pr-comment.js');
 
-            //await deletePrComment(github, context, core, '${{ env.EXISTING_COMMENT_ID }}');
-            //await deletePrComment(github, context, core, '${{ steps.matching-prefix-no-update.outputs.pr-comment-id }}');
-            //await deletePrComment(github, context, core, '${{ steps.update-without-matching-prefix.outputs.pr-comment-id }}');
+            await deletePrComment(github, context, core, '${{ env.EXISTING_COMMENT_ID }}');
+            await deletePrComment(github, context, core, '${{ steps.matching-prefix-no-update.outputs.pr-comment-id }}');
+            await deletePrComment(github, context, core, '${{ steps.update-without-matching-prefix.outputs.pr-comment-id }}');
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
