@@ -1,26 +1,4 @@
 module.exports = async (core, actualComment, actualTestResults, expectedComment) => {
-  function assertLengthsAreTheSame(prCommentLength, testResultsMdLength) {
-    core.info(`\n\tPR Comment length:\t\t'${prCommentLength}'`);
-    core.info(`\ttest-results.md length: '${testResultsMdLength}'`);
-
-    if (prCommentLength != testResultsMdLength) {
-      core.setFailed(`\tThe lengths do not match, which is not expected.`);
-    } else {
-      core.info(`\tThe lengths match, which is expected.`);
-    }
-  }
-
-  function assertLengthsAreNotTheSame(prCommentLength, testResultsMdLength) {
-    core.info(`\n\tPR Comment length:\t\t'${prCommentLength}'`);
-    core.info(`\ttest-results.md length: '${testResultsMdLength}'`);
-
-    if (prCommentLength != testResultsMdLength) {
-      core.info(`\tThe lengths do not match, which is expected.`);
-    } else {
-      core.setFailed(`\tThe lengths match, which is not expected.`);
-    }
-  }
-
   function assertCreatedAndUpdatedMatch(created, updated) {
     core.info(`\n\tCreated: '${created}'`);
     core.info(`\tUpdated:   '${updated}'`);
