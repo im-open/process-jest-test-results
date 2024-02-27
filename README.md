@@ -105,7 +105,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: jest test with Coverage
         continue-on-error: true
@@ -128,7 +128,7 @@ jobs:
   advanced-ci:
     runs-on: [ubuntu-20.04]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: jest test with results file
         continue-on-error: true
