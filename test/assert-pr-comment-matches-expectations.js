@@ -1,7 +1,7 @@
 module.exports = async (core, actualComment, actualTestResults, expectedComment) => {
   function assertCreatedAndUpdatedMatch(created, updated) {
     core.info(`\n\tCreated: '${created}'`);
-    core.info(`\tUpdated:   '${updated}'`);
+    core.info(`\tUpdated: '${updated}'`);
 
     if (created != updated) {
       core.setFailed(`\tThe created and updated dates do not match, which is NOT expected.`);
@@ -12,7 +12,7 @@ module.exports = async (core, actualComment, actualTestResults, expectedComment)
 
   function assertUpdatedIsAfterCreated(created, updated) {
     core.info(`\n\tCreated: '${created}'`);
-    core.info(`\tUpdated:   '${updated}'`);
+    core.info(`\tUpdated: '${updated}'`);
 
     if (created >= updated) {
       core.setFailed(`\tThe created date is on or after the updated date, which is NOT expected.`);
@@ -24,13 +24,16 @@ module.exports = async (core, actualComment, actualTestResults, expectedComment)
   function assertValueContainsSubstring(valueName, value, substringName, substring) {
     if (value.includes(substring)) {
       core.info(`\n\tChecking ${valueName} contains the ${substringName} substring.`);
-      core.info(`\tThe ${valueName} string contains the substring.`);
+      core.info(`\tThe ${valueName} string contains the substring, which is expected.`);
     } else {
       core.info(`\n\tChecking ${valueName} contains the ${substringName} substring.`);
-      core.setFailed(`\tThe ${valueName} string does not contain the ${substringName} substring.`);
-      core.startGroup('\tString and substring Details');
-      core.info(`\n\t${valueName}: '${value}'`);
-      core.info(`\t${substringName}: '${substring}'`);
+      core.setFailed(`\tThe ${valueName} string does not contain the ${substringName} substring, which is not expected.`);
+      core.startGroup(`\t${valueName} contents:`);
+      core.info(`'${value}'`);
+      core.endGroup();
+
+      core.startGroup(`\t${substringName} contents:`);
+      core.info(`'${substring}'`);
       core.endGroup();
     }
   }

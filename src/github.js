@@ -12,7 +12,7 @@ async function createStatusCheck(repoToken, markupData, conclusion, reportName) 
   const checkTime = new Date().toUTCString();
   const summary = `This test run completed at \`${checkTime}\``;
 
-  let propMessage = `  Name: ${name}
+  const propMessage = `  Name: ${name}
   GitSha: ${git_sha}
   Event: ${github.context.eventName}
   Status: ${status}
@@ -47,7 +47,7 @@ async function createStatusCheck(repoToken, markupData, conclusion, reportName) 
   return statusCheckId;
 }
 
-async function lookForExistingComment(octokit, markupPrefix) {
+async function lookForExistingComment(octokit, markdownPrefix) {
   let commentId = null;
 
   await octokit
@@ -60,7 +60,7 @@ async function lookForExistingComment(octokit, markupPrefix) {
       if (comments.length === 0) {
         core.info('There are no comments on the PR.  A new comment will be created.');
       } else {
-        const existingComment = comments.find(c => c.body.startsWith(markupPrefix));
+        const existingComment = comments.find(c => c.body.startsWith(markdownPrefix));
         if (existingComment) {
           core.info(`An existing comment (${existingComment.id}) was found and will be updated.`);
           commentId = existingComment.id;

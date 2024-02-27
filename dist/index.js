@@ -2389,7 +2389,8 @@ var require_utils2 = __commonJS({
       }
     }
     function areThereAnyFailingTests2(json) {
-      core2.info(`Checking for failing tests..`);
+      core2.info(`
+Checking for failing tests..`);
       if (json.numFailedTests > 0) {
         core2.warning(`At least one failing test was found.`);
         return true;
@@ -16659,7 +16660,7 @@ Creating Status check for ${reportName2}...`);
       const status = 'completed';
       const checkTime = new Date().toUTCString();
       const summary = `This test run completed at \`${checkTime}\``;
-      let propMessage = `  Name: ${name}
+      const propMessage = `  Name: ${name}
   GitSha: ${git_sha}
   Event: ${github.context.eventName}
   Status: ${status}
@@ -16692,7 +16693,7 @@ Creating Status check for ${reportName2}...`);
         });
       return statusCheckId;
     }
-    async function lookForExistingComment(octokit, markupPrefix) {
+    async function lookForExistingComment(octokit, markdownPrefix) {
       let commentId = null;
       await octokit
         .paginate(octokit.rest.issues.listComments, {
@@ -16704,7 +16705,7 @@ Creating Status check for ${reportName2}...`);
           if (comments.length === 0) {
             core2.info('There are no comments on the PR.  A new comment will be created.');
           } else {
-            const existingComment = comments.find(c => c.body.startsWith(markupPrefix));
+            const existingComment = comments.find(c => c.body.startsWith(markdownPrefix));
             if (existingComment) {
               core2.info(`An existing comment (${existingComment.id}) was found and will be updated.`);
               commentId = existingComment.id;
@@ -19833,18 +19834,18 @@ async function run() {
     if (shouldCreatePRComment) {
       core.info(`
 Creating a PR comment with length ${markupData.length}...`);
-      const charLimit = 65535;
+      const characterLimit = 65535;
       let truncated = false;
       let mdForComment = markupData;
-      if (mdForComment.length > charLimit) {
-        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${mdForComment.length}/${charLimit}`;
+      if (mdForComment.length > characterLimit) {
+        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${mdForComment.length}/${characterLimit}`;
         core.info(message);
         truncated = true;
         const truncatedMessage = `> [!Important]
 > Test results truncated due to character limit.  See full report in output.
 `;
         mdForComment = `${truncatedMessage}
-${mdForComment.substring(0, charLimit - 100)}`;
+${mdForComment.substring(0, characterLimit - 100)}`;
       }
       core.setOutput('test-results-truncated', truncated);
       const commentId = await createPrComment(token, mdForComment, updateCommentIfOneExists, commentIdentifier);

@@ -20,7 +20,7 @@ async function readJsonResultsFromFile(resultsFile) {
 }
 
 function areThereAnyFailingTests(json) {
-  core.info(`Checking for failing tests..`);
+  core.info(`\nChecking for failing tests..`);
 
   if (json.numFailedTests > 0) {
     core.warning(`At least one failing test was found.`);

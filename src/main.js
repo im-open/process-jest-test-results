@@ -10,7 +10,6 @@ const requiredArgOptions = {
 
 const token = core.getInput('github-token', requiredArgOptions);
 const resultsFile = core.getInput('results-file', requiredArgOptions);
-
 const ignoreTestFailures = core.getBooleanInput('ignore-test-failures');
 const shouldCreateStatusCheck = core.getBooleanInput('create-status-check');
 const shouldCreatePRComment = core.getBooleanInput('create-pr-comment');
@@ -46,16 +45,17 @@ async function run() {
       core.info(`\nCreating a PR comment with length ${markupData.length}...`);
 
       // GitHub API has a limit of 65535 characters for a comment so truncate the markup if we need to
-      const charLimit = 65535;
+      const characterLimit = 65535;
       let truncated = false;
       let mdForComment = markupData;
-      if (mdForComment.length > charLimit) {
-        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${mdForComment.length}/${charLimit}`;
+
+      if (mdForComment.length > characterLimit) {
+        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${mdForComment.length}/${characterLimit}`;
         core.info(message);
 
         truncated = true;
         const truncatedMessage = `> [!Important]\n> Test results truncated due to character limit.  See full report in output.\n`;
-        mdForComment = `${truncatedMessage}\n${mdForComment.substring(0, charLimit - 100)}`;
+        mdForComment = `${truncatedMessage}\n${mdForComment.substring(0, characterLimit - 100)}`;
       }
       core.setOutput('test-results-truncated', truncated);
 
