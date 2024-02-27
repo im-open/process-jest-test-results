@@ -1,4 +1,4 @@
-# No Failures for PR Comment Scenario
+# Do Not Update Comment Scenario
 
 ![Generic badge](https://img.shields.io/badge/6/6-PASSED-brightgreen.svg)
 <details>

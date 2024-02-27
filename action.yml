@@ -41,6 +41,7 @@ inputs:
       A unique identifier which will be added to the generated markdown as a comment (*it will not be visible in the PR comment*).
       This identifier enables creating then updating separate results comments on the PR if more than one instance of this action is included in a single job.
       This can be helpful when there are multiple test projects that run separately but are part of the same job.
+      Defaults to GITHUB_JOB_GITHUB_ACTION if not provided.
       *Only applicable when `create-pr-comment` is true.*
     required: false
   timezone:

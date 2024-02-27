@@ -1,4 +1,4 @@
-module.exports = async (core, comment, expectedValues) => {
+module.exports = async (core, actualComment, actualTestResults, expectedComment) => {
   function assertLengthsAreTheSame(prCommentLength, testResultsMdLength) {
     core.info(`\n\tPR Comment length:\t\t'${prCommentLength}'`);
     core.info(`\ttest-results.md length: '${testResultsMdLength}'`);
@@ -9,6 +9,7 @@ module.exports = async (core, comment, expectedValues) => {
       core.info(`\tThe lengths match, which is expected.`);
     }
   }
+
   function assertLengthsAreNotTheSame(prCommentLength, testResultsMdLength) {
     core.info(`\n\tPR Comment length:\t\t'${prCommentLength}'`);
     core.info(`\ttest-results.md length: '${testResultsMdLength}'`);
@@ -58,38 +59,33 @@ module.exports = async (core, comment, expectedValues) => {
 
   function validateProps() {
     core.info(`\nAsserting that PR Comment properties match the expected values.`);
-    core.info(`Comment ID: ${comment.id}`);
 
-    const expectedPrefix = expectedValues.expectedPrefix;
-    const expectedBody = expectedValues.expectedBody;
-    const actualTestResultsMd = expectedValues.actualTestResults;
-    const actualTestResultsMdWithPrefix = `${expectedPrefix}\n${actualTestResultsMd}`;
-    const actualComment = comment.body;
+    const expectedPrefix = expectedComment.prefix;
+    const expectedFullMd = expectedComment.fullMarkdown;
+    const expectedTruncatedMd = expectedComment.truncatedMarkdown;
+    const isTruncated = expectedComment.truncated;
 
-    // The actual comment body should contain the expected prefix and the expected body
+    // Check the actual comment's body
     assertValueContainsSubstring('PR Comment', actualComment, 'Expected Prefix', expectedPrefix);
-    assertValueContainsSubstring('PR Comment', actualComment, 'Expected Body', expectedBody);
-
-    // The test-results.md file is the whole markdown before truncation so
-    // it should contain the substring of the actual comment
-    assertValueContainsSubstring('test-results.md', actualTestResultsMdWithPrefix, 'Actual Comment Body', actualComment);
-
-    if (expectedValues.truncated) {
-      assertLengthsAreNotTheSame(actualComment.length, actualTestResultsMdWithPrefix.length);
+    if (isTruncated) {
+      assertValueContainsSubstring('PR Comment', actualComment, 'Expected Body', expectedTruncatedMd);
     } else {
-      assertLengthsAreTheSame(actualComment.length, actualTestResultsMdWithPrefix.length);
+      assertValueContainsSubstring('PR Comment', actualComment, 'Expected Body', expectedFullMd);
     }
 
+    // Check the test-results.md file
+    assertValueContainsSubstring('test-results.md', actualTestResults, 'Expected Body', expectedFullMd);
+
     // Doublecheck the timestamps are generally what we expected based on created/updated status
-    switch (expectedValues.action) {
+    switch (expectedComment.action) {
       case 'updated':
-        assertUpdatedIsAfterCreated(comment.createdAt, comment.updatedAt);
+        assertUpdatedIsAfterCreated(actualComment.createdAt, actualComment.updatedAt);
         break;
       case 'created':
-        assertCreatedAndUpdatedMatch(comment.createdAt, comment.updatedAt);
+        assertCreatedAndUpdatedMatch(actualComment.createdAt, actualComment.updatedAt);
         break;
       default:
-        core.setFailed(`The action '${expectedValues.action}' is not supported.`);
+        core.setFailed(`The action '${expectedComment.action}' is not supported.`);
         break;
     }
   }

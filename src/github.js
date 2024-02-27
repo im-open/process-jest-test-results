@@ -78,20 +78,22 @@ async function lookForExistingComment(octokit, markupPrefix) {
   return commentId;
 }
 
-async function createPrComment(repoToken, markupData, updateCommentIfOneExists, commentIdentifier) {
+async function createPrComment(repoToken, markdown, updateCommentIfOneExists, commentIdentifier) {
   if (github.context.eventName != 'pull_request') {
     core.info('This event was not triggered by a pull_request.  No comment will be created or updated.');
     return;
   }
 
-  const markupPrefix = `<!-- im-open/process-jest-test-results ${commentIdentifier} -->`;
+  const markdownPrefix = `<!-- im-open/process-jest-test-results ${commentIdentifier} -->`;
+  core.info(`The markdown prefix will be: '${markdownPrefix}'`);
+
   const octokit = github.getOctokit(repoToken);
 
   let commentIdToReturn;
   let existingCommentId = null;
   if (updateCommentIfOneExists) {
     core.info('Checking for existing comment on PR....');
-    existingCommentId = await lookForExistingComment(octokit, markupPrefix);
+    existingCommentId = await lookForExistingComment(octokit, markdownPrefix);
   }
 
   if (existingCommentId) {
@@ -102,7 +104,7 @@ async function createPrComment(repoToken, markupData, updateCommentIfOneExists, 
       .updateComment({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
-        body: `${markupPrefix}\n${markupData}`,
+        body: `${markdownPrefix}\n${markdown}`,
         comment_id: existingCommentId
       })
       .then(response => {
@@ -117,7 +119,7 @@ async function createPrComment(repoToken, markupData, updateCommentIfOneExists, 
       .createComment({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
-        body: `${markupPrefix}\n${markupData}`,
+        body: `${markdownPrefix}\n${markdown}`,
         issue_number: github.context.payload.pull_request.number
       })
       .then(response => {

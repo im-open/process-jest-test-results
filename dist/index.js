@@ -16719,18 +16719,19 @@ Creating Status check for ${reportName2}...`);
       core2.info(`Finished getting comments for PR #${github.context.payload.pull_request.number}.`);
       return commentId;
     }
-    async function createPrComment2(repoToken, markupData, updateCommentIfOneExists2, commentIdentifier2) {
+    async function createPrComment2(repoToken, markdown, updateCommentIfOneExists2, commentIdentifier2) {
       if (github.context.eventName != 'pull_request') {
         core2.info('This event was not triggered by a pull_request.  No comment will be created or updated.');
         return;
       }
-      const markupPrefix = `<!-- im-open/process-jest-test-results ${commentIdentifier2} -->`;
+      const markdownPrefix = `<!-- im-open/process-jest-test-results ${commentIdentifier2} -->`;
+      core2.info(`The markdown prefix will be: '${markdownPrefix}'`);
       const octokit = github.getOctokit(repoToken);
       let commentIdToReturn;
       let existingCommentId = null;
       if (updateCommentIfOneExists2) {
         core2.info('Checking for existing comment on PR....');
-        existingCommentId = await lookForExistingComment(octokit, markupPrefix);
+        existingCommentId = await lookForExistingComment(octokit, markdownPrefix);
       }
       if (existingCommentId) {
         core2.info(`Updating existing PR #${existingCommentId} comment...`);
@@ -16739,8 +16740,8 @@ Creating Status check for ${reportName2}...`);
           .updateComment({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
-            body: `${markupPrefix}
-${markupData}`,
+            body: `${markdownPrefix}
+${markdown}`,
             comment_id: existingCommentId
           })
           .then(response => {
@@ -16755,8 +16756,8 @@ ${markupData}`,
           .createComment({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
-            body: `${markupPrefix}
-${markupData}`,
+            body: `${markdownPrefix}
+${markdown}`,
             issue_number: github.context.payload.pull_request.number
           })
           .then(response => {
@@ -19809,7 +19810,7 @@ var shouldCreateStatusCheck = core.getBooleanInput('create-status-check');
 var shouldCreatePRComment = core.getBooleanInput('create-pr-comment');
 var updateCommentIfOneExists = core.getBooleanInput('update-comment-if-one-exists');
 var reportName = core.getInput('report-name');
-var jobAndStep = `${process.env.GITHUB_ACTION}-${process.env.GITHUB_JOB}`;
+var jobAndStep = `${process.env.GITHUB_JOB}_${process.env.GITHUB_ACTION}`;
 var commentIdentifier = core.getInput('comment-identifier') || jobAndStep;
 async function run() {
   try {
@@ -19820,9 +19821,7 @@ async function run() {
     }
     const failingTestsFound = areThereAnyFailingTests(resultsJson);
     core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
-    let markupData = getMarkupForJson(resultsJson, reportName);
-    const resultsFilePath = createResultsFile(markupData, jobAndStep);
-    core.setOutput('test-results-file-path', resultsFilePath);
+    const markupData = getMarkupForJson(resultsJson, reportName);
     if (shouldCreateStatusCheck) {
       let conclusion = 'success';
       if (!resultsJson.success) {
@@ -19836,18 +19835,23 @@ async function run() {
 Creating a PR comment with length ${markupData.length}...`);
       const charLimit = 65535;
       let truncated = false;
-      if (markupData.length > charLimit) {
-        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${markupData.length}/${charLimit}`;
+      let mdForComment = markupData;
+      if (mdForComment.length > charLimit) {
+        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${mdForComment.length}/${charLimit}`;
         core.info(message);
         truncated = true;
-        const truncatedMessage = `Test results truncated due to character limit.  See full report in output.`;
-        markupData = `${truncatedMessage}
-${markupData.substring(0, charLimit - 100)}`;
+        const truncatedMessage = `> [!Important]
+> Test results truncated due to character limit.  See full report in output.
+`;
+        mdForComment = `${truncatedMessage}
+${mdForComment.substring(0, charLimit - 100)}`;
       }
       core.setOutput('test-results-truncated', truncated);
-      const commentId = await createPrComment(token, markupData, updateCommentIfOneExists, commentIdentifier);
+      const commentId = await createPrComment(token, mdForComment, updateCommentIfOneExists, commentIdentifier);
       core.setOutput('pr-comment-id', commentId);
     }
+    const resultsFilePath = createResultsFile(markupData, jobAndStep);
+    core.setOutput('test-results-file-path', resultsFilePath);
   } catch (error) {
     if (error instanceof RangeError) {
       core.info(error.message);

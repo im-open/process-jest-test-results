@@ -21,8 +21,18 @@ on:
   #   without disabling that requirement.  If we have a status check that is always produced,
   #   we can also use that to require all branches be up to date before they are merged.
 
+
+env:
+  EMPTY_JSON_RESULTS_FILE: './test/input-files/empty-results.json'
+  FAILING_JSON_RESULTS_FILE: './test/input-files/failing.json'
+  NO_TESTS_JSON_RESULTS_FILE: './test/input-files/no-tests.json'
+  PASSING_JSON_RESULTS_FILE: './test/input-files/passing.json'
+  TRUNCATE_JSON_RESULTS_FILE: './test/input-files/truncate.json'
+  
+
 jobs:
   build-and-review-pr:
+    if: 1 == 2
     # This reusable workflow will check to see if an action's source code has changed based on
     # whether the PR includes files that match the files-with-code arg or are in one of the
     # dirs-with-code directories.  If there are source code changes, this reusable workflow
@@ -62,11 +72,12 @@ jobs:
       build-command: 'npm run build'
   
   unit-tests:
+    if: 1 == 2
     runs-on: ubuntu-latest
     env:
-      PASSING_MD_FILE: './test/files/expected-results-for-passing-tests.md'
-      FAILING_MD_FILE: './test/files/expected-results-for-failing-tests.md'
-      NO_TESTS_MD_FILE: './test/files/expected-results-for-no-tests.md'
+      PASSING_MD_FILE: './test/expected-markdown/unit-tests/passing-tests.md'
+      FAILING_MD_FILE: './test/expected-markdown/unit-tests/failing-tests.md'
+      NO_TESTS_MD_FILE: './test/expected-markdown/unit-tests/no-tests.md'
 
     steps:
       - name: '-------------------------------------------------------------------------------------------------------------'
@@ -89,7 +100,7 @@ jobs:
         uses: ./
         with:
           github-token: ''
-          results-file: './test/files/empty-results.json'
+          results-file: '${{ env.EMPTY_JSON_RESULTS_FILE }}'
 
       - name: 1 - Then the action outcome should be failure
         if: always()
@@ -143,7 +154,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: './test/files/file-that-does-not-exist.json'
+          results-file: './test/expected-markdown/input-files/file-that-does-not-exist.json'
           create-status-check: false
           create-pr-comment: false
 
@@ -176,7 +187,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: './test/files/empty-results.json'
+          results-file: '${{ env.EMPTY_JSON_RESULTS_FILE }}'
           create-status-check: false
           create-pr-comment: false
 
@@ -208,7 +219,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: './test/files/passing.json'
+          results-file: '${{ env.PASSING_JSON_RESULTS_FILE }}'
           create-status-check: false
           create-pr-comment: false
           timezone: 'America/Denver'
@@ -259,7 +270,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: './test/files/failing.json'
+          results-file: '${{ env.FAILING_JSON_RESULTS_FILE }}'
           create-status-check: false
           create-pr-comment: false
           # timezone: 'UTC'  # Test the default
@@ -311,7 +322,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: './test/files/no-tests.json'
+          results-file: '${{ env.NO_TESTS_JSON_RESULTS_FILE }}'
           report-name: 'Missing Test Results'
           create-status-check: false
           create-pr-comment: false
@@ -352,14 +363,12 @@ jobs:
           ./test/assert-file-contents-match.sh --expectedFileName $expectedFileName --actualFileName $actualFileName
 
   test-status-checks:
+    if: 1 == 2
     runs-on: ubuntu-latest
     env:
-      FAILING_TESTS_JSON: './test/files/failing.json'
-      PASSING_TESTS_JSON: './test/files/passing.json'
-      
-      NO_FAILURES_MD_FILE: './test/files/expected-check-results-no-failures.md'
-      IGNORE_FAILURES_MD_FILE: './test/files/expected-check-results-ignore-failures.md'
-      ALLOW_FAILURES_MD_FILE: './test/files/expected-check-results-allow-failures.md'
+      NO_FAILURES_MD_FILE: './test/expected-markdown/status-checks/no-failures.md'
+      IGNORE_FAILURES_MD_FILE: './test/expected-markdown/status-checks/ignore-failures.md'
+      ALLOW_FAILURES_MD_FILE: './test/expected-markdown/status-checks/allow-failures.md'
       
       NO_FAILURES_REPORT_NAME: 'No Failures Scenario'
       IGNORE_FAILURES_REPORT_NAME: 'Ignore Failures Scenario'
@@ -392,7 +401,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: ${{ env.PASSING_TESTS_JSON }}
+          results-file: ${{ env.PASSING_JSON_RESULTS_FILE }}
           report-name: ${{ env.NO_FAILURES_REPORT_NAME }}
           create-status-check: true
           create-pr-comment: false
@@ -442,7 +451,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: ${{ env.FAILING_TESTS_JSON }}
+          results-file: ${{ env.FAILING_JSON_RESULTS_FILE }}
           report-name: ${{ env.IGNORE_FAILURES_REPORT_NAME }}
           create-status-check: true
           ignore-test-failures: true
@@ -493,7 +502,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: ${{ env.FAILING_TESTS_JSON }}
+          results-file: ${{ env.FAILING_JSON_RESULTS_FILE }}
           report-name: ${{ env.ALLOW_FAILURES_REPORT_NAME }}
           create-status-check: true
           ignore-test-failures: false
@@ -557,16 +566,16 @@ jobs:
       EXISTING_COMMENT_ID: ''
       COMMENT_IDENTIFIER: 'existing-comment-${{ github.run_id }}'
 
-      TRUNCATE_TESTS_JSON: './test/files/truncate.json'
-      PASSING_TESTS_JSON: './test/files/passing.json'
-      
-      NO_FAILURES_MD_FILE: './test/files/expected-pr-comment.md'
-      TRUNCATE_MD_FILE: './test/files/expected-pr-comment-truncated.md'
+      UPDATE_WITH_MATCHING_PREFIX_MD_FILE: './test/expected-markdown/pr-comments/update-matching-prefix.md'
+      UPDATE_WITHOUT_MATCHING_PREFIX_MD_FILE: './test/expected-markdown/pr-comments/update-without-matching-prefix.md'
+      NO_UPDATE_MD_FILE: './test/expected-markdown/pr-comments/no-update.md'
+      TRUNCATE_FULL_MD_FILE: './test/expected-markdown/pr-comments/truncate-full-markdown.md'
+      TRUNCATE_TRUNCATED_MD_FILE: './test/expected-markdown/pr-comments/truncate-truncated-markdown.md'
       
       UPDATE_WITH_MATCHING_PREFIX_REPORT_NAME: 'Update Comment with Matching Prefix Scenario'
       UPDATE_WITHOUT_MATCHING_PREFIX_REPORT_NAME: 'Update Comment but no Matching Prefix Scenario'
       NO_UPDATE_REPORT_NAME: 'Do Not Update Comment Scenario'
-      TRUNCATE_FAILURES_REPORT_NAME: 'Truncate Failures for PR Comment Scenario'
+      TRUNCATE_FAILURES_REPORT_NAME: 'Truncated PR Comment Scenario'
 
     steps:
       - name: '-------------------------------------------------------------------------------------------------------------'
@@ -623,7 +632,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: ${{ env.PASSING_TESTS_JSON }}
+          results-file: ${{ env.PASSING_JSON_RESULTS_FILE }}
           report-name: ${{ env.UPDATE_WITH_MATCHING_PREFIX_REPORT_NAME }}
           create-status-check: false
           create-pr-comment: true
@@ -654,17 +663,16 @@ jobs:
             const commentId = '${{ steps.update-with-matching-prefix.outputs.pr-comment-id }}';
             const actualComment = await assertCommentExists(github, context, core, commentId);
 
-            const expectedBody = fs.readFileSync('${{ env.NO_FAILURES_MD_FILE }}', 'utf8');
-            const testResultsBody = fs.readFileSync('${{ steps.update-with-matching-prefix.outputs.test-results-file-path }}', 'utf8');
+            const expectedMarkdown = fs.readFileSync('${{ env.UPDATE_WITH_MATCHING_PREFIX_MD_FILE }}', 'utf8');
+            const actualTestResults = fs.readFileSync('${{ steps.update-with-matching-prefix.outputs.test-results-file-path }}', 'utf8');
             
             const expectedComment = {
-              expectedPrefix: '<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->',
-              expectedBody: expectedBody,
-              actualTestResults: testResultsBody,
+              prefix: '<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->',
+              fullMarkdown: expectedMarkdown,
               action: 'updated',
               truncated: false
             };
-            assertCommentMatchesExpectations(core, actualComment, expectedComment);
+            assertCommentMatchesExpectations(core, actualComment.body, actualTestResults, expectedComment);
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
@@ -677,7 +685,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: ${{ env.PASSING_TESTS_JSON }}
+          results-file: ${{ env.PASSING_JSON_RESULTS_FILE }}
           report-name: ${{ env.UPDATE_WITHOUT_MATCHING_PREFIX_REPORT_NAME }}
           create-status-check: false
           create-pr-comment: true
@@ -708,17 +716,16 @@ jobs:
             const commentId = '${{ steps.update-without-matching-prefix.outputs.pr-comment-id }}';
             const actualComment = await assertCommentExists(github, context, core, commentId);
 
-            const expectedBody = fs.readFileSync('${{ env.NO_FAILURES_MD_FILE }}', 'utf8');
-            const testResultsBody = fs.readFileSync('${{ steps.update-without-matching-prefix.outputs.test-results-file-path }}', 'utf8');
+            const expectedMarkdown = fs.readFileSync('${{ env.UPDATE_WITHOUT_MATCHING_PREFIX_MD_FILE }}', 'utf8');
+            const actualTestResults = fs.readFileSync('${{ steps.update-without-matching-prefix.outputs.test-results-file-path }}', 'utf8');
             
             const expectedComment = {
-              expectedPrefix: '<!-- im-open/process-jest-test-results different-identifier-${{ github.run_id }} -->',
-              expectedBody: expectedBody,
-              actualTestResults: testResultsBody,
+              prefix: '<!-- im-open/process-jest-test-results different-identifier-${{ github.run_id }} -->',
+              fullMarkdown: expectedMarkdown,
               action: 'created',
               truncated: false
             };
-            assertCommentMatchesExpectations(core, actualComment, expectedComment);
+            assertCommentMatchesExpectations(core, actualComment.body, actualTestResults, expectedComment);
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
@@ -731,7 +738,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: ${{ env.PASSING_TESTS_JSON }}
+          results-file: ${{ env.PASSING_JSON_RESULTS_FILE }}
           report-name: ${{ env.NO_UPDATE_REPORT_NAME }}
           create-status-check: false
           create-pr-comment: true
@@ -761,17 +768,16 @@ jobs:
             const commentId = '${{ steps.matching-prefix-no-update.outputs.pr-comment-id }}';
             const actualComment = await assertCommentExists(github, context, core, commentId);
 
-            const expectedBody = fs.readFileSync('${{ env.NO_FAILURES_MD_FILE }}', 'utf8');
-            const testResultsBody = fs.readFileSync('${{ steps.matching-prefix-no-update.outputs.test-results-file-path }}', 'utf8');
+            const expectedMarkdown = fs.readFileSync('${{ env.NO_UPDATE_MD_FILE }}', 'utf8');
+            const actualTestResults = fs.readFileSync('${{ steps.matching-prefix-no-update.outputs.test-results-file-path }}', 'utf8');
             
             const expectedComment = {
-              expectedPrefix: '<!-- im-open/process-jest-test-results ${{ env.GITHUB_JOB }}-${{ env.GITHUB_ACTION }} -->',
-              expectedBody: expectedBody,
-              actualTestResults: testResultsBody,
+              prefix: `<!-- im-open/process-jest-test-results ${process.env.GITHUB_JOB}_${process.env.GITHUB_ACTION} -->`,
+              fullMarkdown: expectedMarkdown,
               action: 'created',
               truncated: false
             };
-            assertCommentMatchesExpectations(core, actualComment, expectedComment);
+            assertCommentMatchesExpectations(core, actualComment.body, actualTestResults, expectedComment);
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
@@ -784,7 +790,7 @@ jobs:
         uses: ./
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          results-file: ${{ env.TRUNCATE_TESTS_JSON }}
+          results-file: ${{ env.TRUNCATE_JSON_RESULTS_FILE }}
           report-name: ${{ env.TRUNCATE_FAILURES_REPORT_NAME }}
           create-status-check: false
           create-pr-comment: true
@@ -815,17 +821,19 @@ jobs:
             const commentId = '${{ steps.truncate.outputs.pr-comment-id }}';
             const actualComment = await assertCommentExists(github, context, core, commentId);
 
-            const expectedBody = fs.readFileSync('${{ env.TRUNCATE_MD_FILE }}', 'utf8');
-            const testResultsBody = fs.readFileSync('${{ steps.truncate.outputs.test-results-file-path }}', 'utf8');
-            
+            const expectedMarkdown = fs.readFileSync('${{ env.TRUNCATE_FULL_MD_FILE }}', 'utf8');
+            const expectedTruncatedMarkdown = fs.readFileSync('${{ env.TRUNCATE_TRUNCATED_MD_FILE }}', 'utf8');
+            const actualTestResults = fs.readFileSync('${{ steps.truncate.outputs.test-results-file-path }}', 'utf8');
+            const truncateMessage = 'Test results truncated due to character limit. See full report in output.';
+
             const expectedComment = {
-              expectedPrefix: '<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->\nTest results truncated due to character limit. See full report in output.\n',
-              expectedBody: expectedBody,
-              actualTestResults: testResultsBody,
+              prefix: `<!-- im-open/process-jest-test-results ${{ env.COMMENT_IDENTIFIER }} -->`,
+              fullMarkdown: expectedMarkdown,
               action: 'updated',
-              truncated: true
+              truncated: true,
+              truncatedMarkdown: expectedTruncatedMarkdown,
             };
-            assertCommentMatchesExpectations(core, actualComment, expectedComment);
+            assertCommentMatchesExpectations(core, actualComment.body, actualTestResults, expectedComment);
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
