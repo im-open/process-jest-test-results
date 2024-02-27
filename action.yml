@@ -61,5 +61,5 @@ outputs:
     description: 'The ID of the PR comment that was created.  This is only set if `create-pr-comment` is `true` and a PR was created successfully.'
 
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
