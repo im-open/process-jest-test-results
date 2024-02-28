@@ -1,0 +1,122 @@
+{
+    "numFailedTestSuites": 0,
+    "numFailedTests": 0,
+    "numPassedTestSuites": 1,
+    "numPassedTests": 6,
+    "numPendingTestSuites": 0,
+    "numPendingTests": 0,
+    "numRuntimeErrorTestSuites": 0,
+    "numTodoTests": 0,
+    "numTotalTestSuites": 1,
+    "numTotalTests": 6,
+    "openHandles": [],
+    "snapshot": {
+        "added": 0,
+        "didUpdate": false,
+        "failure": false,
+        "filesAdded": 0,
+        "filesRemoved": 0,
+        "filesRemovedList": [],
+        "filesUnmatched": 0,
+        "filesUpdated": 0,
+        "matched": 0,
+        "total": 0,
+        "unchecked": 0,
+        "uncheckedKeysByFile": [],
+        "unmatched": 0,
+        "updated": 0
+    },
+    "startTime": 1708720986979,
+    "success": true,
+    "testResults": [
+        {
+            "assertionResults": [
+                {
+                    "ancestorTitles": [],
+                    "duration": 342,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should be able to select a recommended reason",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 3,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should be able to select a recommended reason"
+                },
+                {
+                    "ancestorTitles": [],
+                    "duration": 198,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should be able to open the additional reasons drawer and select a reason",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 3,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should be able to open the additional reasons drawer and select a reason"
+                },
+                {
+                    "ancestorTitles": [],
+                    "duration": 175,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should display an error when save is clicked with an invalid event date",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 2,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should display an error when save is clicked with an invalid event date"
+                },
+                {
+                    "ancestorTitles": [],
+                    "duration": 75,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should display an error when save is clicked without entering a date",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 2,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should display an error when save is clicked without entering a date"
+                },
+                {
+                    "ancestorTitles": [],
+                    "duration": 64,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should be able to save a reason which doesn't require an event date",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 3,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should be able to save a reason which doesn't require an event date"
+                },
+                {
+                    "ancestorTitles": [],
+                    "duration": 169,
+                    "failureDetails": [],
+                    "failureMessages": [],
+                    "fullName": "should display the reason with isDisplayedFirst first",
+                    "invocations": 1,
+                    "location": null,
+                    "numPassingAsserts": 1,
+                    "retryReasons": [],
+                    "status": "passed",
+                    "title": "should display the reason with isDisplayedFirst first"
+                }
+            ],
+            "endTime": 1708720992667,
+            "message": "",
+            "name": "C:\\code\\Selector.test.js",
+            "startTime": 1708720987647,
+            "status": "passed",
+            "summary": ""
+        }
+    ],
+    "wasInterrupted": false
+}

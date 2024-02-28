@@ -2369,6 +2369,7 @@ var require_utils2 = __commonJS({
   'src/utils.js'(exports2, module2) {
     var core2 = require_core();
     var fs = require('fs');
+    var path = require('path');
     async function readJsonResultsFromFile2(resultsFile2) {
       core2.info('Reading results from jest results file....');
       if (fs.existsSync(resultsFile2)) {
@@ -2388,7 +2389,8 @@ var require_utils2 = __commonJS({
       }
     }
     function areThereAnyFailingTests2(json) {
-      core2.info(`Checking for failing tests..`);
+      core2.info(`
+Checking for failing tests..`);
       if (json.numFailedTests > 0) {
         core2.warning(`At least one failing test was found.`);
         return true;
@@ -2396,9 +2398,26 @@ var require_utils2 = __commonJS({
       core2.info(`There are no failing tests.`);
       return false;
     }
+    function createResultsFile2(results, jobAndStep2) {
+      const resultsFileName = `test-results-${jobAndStep2}.md`;
+      core2.info(`
+Writing results to ${resultsFileName}`);
+      let resultsFilePath = null;
+      fs.writeFile(resultsFileName, results, err => {
+        if (err) {
+          core2.info(`Error writing results to file. Error: ${err}`);
+        } else {
+          core2.info('Successfully created results file.');
+          core2.info(`File: ${resultsFileName}`);
+        }
+      });
+      resultsFilePath = path.resolve(resultsFileName);
+      return resultsFilePath;
+    }
     module2.exports = {
       readJsonResultsFromFile: readJsonResultsFromFile2,
-      areThereAnyFailingTests: areThereAnyFailingTests2
+      areThereAnyFailingTests: areThereAnyFailingTests2,
+      createResultsFile: createResultsFile2
     };
   }
 });
@@ -16631,37 +16650,50 @@ var require_github2 = __commonJS({
   'src/github.js'(exports2, module2) {
     var core2 = require_core();
     var github = require_github();
-    var markupPrefix = '<!-- im-open/process-jest-test-results -->';
     async function createStatusCheck2(repoToken, markupData, conclusion, reportName2) {
-      core2.info(`Creating Status check for ${reportName2}...`);
+      core2.info(`
+Creating Status check for ${reportName2}...`);
       const octokit = github.getOctokit(repoToken);
       const git_sha =
         github.context.eventName === 'pull_request' ? github.context.payload.pull_request.head.sha : github.context.sha;
-      core2.info(`Creating status check for GitSha: ${git_sha} on a ${github.context.eventName} event.`);
+      const name = `status check - ${reportName2.toLowerCase()}`;
+      const status = 'completed';
       const checkTime = new Date().toUTCString();
-      core2.info(`Check time is: ${checkTime}`);
+      const summary = `This test run completed at \`${checkTime}\``;
+      const propMessage = `  Name: ${name}
+  GitSha: ${git_sha}
+  Event: ${github.context.eventName}
+  Status: ${status}
+  Conclusion: ${conclusion}
+  Check time: ${checkTime}
+  Title: ${reportName2}
+  Summary: ${summary}`;
+      core2.info(propMessage);
+      let statusCheckId;
       await octokit.rest.checks
         .create({
           owner: github.context.repo.owner,
           repo: github.context.repo.repo,
-          name: `status check - ${reportName2.toLowerCase()}`,
+          name,
           head_sha: git_sha,
-          status: 'completed',
+          status,
           conclusion,
           output: {
             title: reportName2,
-            summary: `This test run completed at \`${checkTime}\``,
+            summary,
             text: markupData
           }
         })
         .then(response => {
-          core2.info(`Created check: ${response.data.name}`);
+          core2.info(`Created check: '${response.data.name}' with id '${response.data.id}'`);
+          statusCheckId = response.data.id;
         })
         .catch(error => {
           core2.setFailed(`An error occurred trying to create the status check: ${error.message}`);
         });
+      return statusCheckId;
     }
-    async function lookForExistingComment(octokit) {
+    async function lookForExistingComment(octokit, markdownPrefix) {
       let commentId = null;
       await octokit
         .paginate(octokit.rest.issues.listComments, {
@@ -16673,7 +16705,7 @@ var require_github2 = __commonJS({
           if (comments.length === 0) {
             core2.info('There are no comments on the PR.  A new comment will be created.');
           } else {
-            const existingComment = comments.find(c => c.body.startsWith(markupPrefix));
+            const existingComment = comments.find(c => c.body.startsWith(markdownPrefix));
             if (existingComment) {
               core2.info(`An existing comment (${existingComment.id}) was found and will be updated.`);
               commentId = existingComment.id;
@@ -16688,25 +16720,29 @@ var require_github2 = __commonJS({
       core2.info(`Finished getting comments for PR #${github.context.payload.pull_request.number}.`);
       return commentId;
     }
-    async function createPrComment2(repoToken, markupData, updateCommentIfOneExists2) {
+    async function createPrComment2(repoToken, markdown, updateCommentIfOneExists2, commentIdentifier2) {
       if (github.context.eventName != 'pull_request') {
         core2.info('This event was not triggered by a pull_request.  No comment will be created or updated.');
         return;
       }
+      const markdownPrefix = `<!-- im-open/process-jest-test-results ${commentIdentifier2} -->`;
+      core2.info(`The markdown prefix will be: '${markdownPrefix}'`);
       const octokit = github.getOctokit(repoToken);
+      let commentIdToReturn;
       let existingCommentId = null;
       if (updateCommentIfOneExists2) {
         core2.info('Checking for existing comment on PR....');
-        existingCommentId = await lookForExistingComment(octokit);
+        existingCommentId = await lookForExistingComment(octokit, markdownPrefix);
       }
       if (existingCommentId) {
         core2.info(`Updating existing PR #${existingCommentId} comment...`);
+        commentIdToReturn = existingCommentId;
         await octokit.rest.issues
           .updateComment({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
-            body: `${markupPrefix}
-${markupData}`,
+            body: `${markdownPrefix}
+${markdown}`,
             comment_id: existingCommentId
           })
           .then(response => {
@@ -16721,17 +16757,19 @@ ${markupData}`,
           .createComment({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
-            body: `${markupPrefix}
-${markupData}`,
+            body: `${markdownPrefix}
+${markdown}`,
             issue_number: github.context.payload.pull_request.number
           })
           .then(response => {
             core2.info(`PR comment was created.  ID: ${response.data.id}.`);
+            commentIdToReturn = response.data.id;
           })
           .catch(error => {
             core2.setFailed(`An error occurred trying to create the PR comment: ${error.message}`);
           });
       }
+      return commentIdToReturn;
     }
     module2.exports = {
       createStatusCheck: createStatusCheck2,
@@ -19599,13 +19637,12 @@ var require_markup = __commonJS({
     var { format, utcToZonedTime } = require_date_fns_tz();
     var timezone = core2.getInput('timezone') || 'Etc/UTC';
     function getMarkupForJson2(results, reportName2) {
-      return `
-  # ${reportName2}
-  ${getBadge(results)}
-  ${getTestTimes(results)}
-  ${getTestCounters(results)}
-  ${getTestResultsMarkup(results)}
-  `;
+      return `# ${reportName2}
+
+${getBadge(results)}
+${getTestTimes(results)}
+${getTestCounters(results)}
+${getFailedAndEmptyTestResultsMarkup(results)}`;
     }
     function getBadge(results) {
       const failedCount = results.numFailedTests;
@@ -19625,6 +19662,10 @@ var require_markup = __commonJS({
       }
     }
     function getTestTimes(results) {
+      let hasTests = results.testResults && results.testResults.length > 0;
+      if (!hasTests) {
+        return '';
+      }
       let startSeconds = results.startTime;
       let endSeconds = results.testResults
         .map(m => m.endTime)
@@ -19634,25 +19675,23 @@ var require_markup = __commonJS({
       const duration = (endSeconds - startSeconds) / 1e3;
       let startDate = new Date(startSeconds);
       let endDate = new Date(endSeconds);
-      return `
-  <details>  
-    <summary> Duration: ${duration} seconds </summary>
-    <table>
-      <tr>
-          <th>Start:</th>
-          <td><code>${formatDate(startDate)}</code></td>
-      </tr>
-      <tr>
-          <th>Finish:</th>
-          <td><code>${formatDate(endDate)}</code></td>    
-      </tr>
-      <tr>
-          <th>Duration:</th>
-          <td><code>${duration} seconds</code></td>
-      </tr>
-    </table>
-  </details>
-  `;
+      return `<details>
+  <summary>Duration: ${duration} seconds</summary>
+  <table>
+    <tr>
+      <th>Start:</th>
+      <td><code>${formatDate(startDate)}</code></td>
+    </tr>
+    <tr>
+      <th>Finish:</th>
+      <td><code>${formatDate(endDate)}</code></td>
+    </tr>
+    <tr>
+      <th>Duration:</th>
+      <td><code>${duration} seconds</code></td>
+    </tr>
+  </table>
+</details>`;
     }
     function getTestCounters(results) {
       let extraProps = getTableRowIfHasValue('Pending Test Suites:', results.numPendingTestSuites);
@@ -19660,38 +19699,35 @@ var require_markup = __commonJS({
       extraProps += getTableRowIfHasValue('Runtime Error Test Suites:', results.numRuntimeErrorTestSuites);
       extraProps += getTableRowIfHasValue('TODO Tests:', results.numTodoTests);
       let outcome = results.success ? 'Passed' : 'Failed';
-      return `
-  <details>
-    <summary> Outcome: ${outcome} | Total Tests: ${results.numTotalTests} | Passed: ${results.numPassedTests} | Failed: ${results.numFailedTests} </summary>
-    <table>
-      <tr>
-         <th>Total Test Suites:</th>
-         <td>${results.numTotalTestSuites}</td>
-      </tr>
-      <tr>
-         <th>Total Tests:</th>
-         <td>${results.numTotalTests}</td>
-      </tr>
-      <tr>
-         <th>Failed Test Suites:</th>
-         <td>${results.numFailedTestSuites}</td>    
-      </tr>
-      <tr>
-         <th>Failed Tests:</th>
-         <td>${results.numFailedTests}</td>    
-      </tr>
-      <tr>
-         <th>Passed Test Suites:</th>
-         <td>${results.numPassedTestSuites}</td>    
-      </tr>
-      <tr>
-         <th>Passed Tests:</th>
-         <td>${results.numPassedTests}</td>    
-      </tr>${extraProps}
-    </table>
-  </details>
-
-  `;
+      return `<details>
+  <summary>Outcome: ${outcome} | Total Tests: ${results.numTotalTests} | Passed: ${results.numPassedTests} | Failed: ${results.numFailedTests}</summary>
+  <table>
+    <tr>
+      <th>Total Test Suites:</th>
+      <td>${results.numTotalTestSuites}</td>
+    </tr>
+    <tr>
+      <th>Total Tests:</th>
+      <td>${results.numTotalTests}</td>
+    </tr>
+    <tr>
+      <th>Failed Test Suites:</th>
+      <td>${results.numFailedTestSuites}</td>
+    </tr>
+    <tr>
+      <th>Failed Tests:</th>
+      <td>${results.numFailedTests}</td>
+    </tr>
+    <tr>
+      <th>Passed Test Suites:</th>
+      <td>${results.numPassedTestSuites}</td>
+    </tr>
+    <tr>
+      <th>Passed Tests:</th>
+      <td>${results.numPassedTests}</td>
+    </tr>${extraProps}
+  </table>
+</details>`;
     }
     function getTableRowIfHasValue(heading, data) {
       if (data > 0) {
@@ -19703,7 +19739,7 @@ var require_markup = __commonJS({
       }
       return '';
     }
-    function getTestResultsMarkup(results, reportName2) {
+    function getFailedAndEmptyTestResultsMarkup(results, reportName2) {
       let resultsMarkup = '';
       if (!results.testResults || results.testResults.length === 0) {
         return getNoResultsMarkup(reportName2);
@@ -19715,43 +19751,43 @@ var require_markup = __commonJS({
         failedTests.forEach(failedTest => {
           resultsMarkup += getFailedTestMarkup(failedTest);
         });
-        return resultsMarkup.trim();
+        return resultsMarkup;
       }
     }
     function getNoResultsMarkup(reportName2) {
       const testResultIcon = ':grey_question:';
       const resultsMarkup = `
-  ## ${testResultIcon} ${reportName2}
-  There were no test results to report.
-  `;
+## ${testResultIcon} ${reportName2}
+
+There were no test results to report.
+`;
       return resultsMarkup;
     }
     function getFailedTestMarkup(failedTest) {
       core2.debug(`Processing ${failedTest.fullName}`);
       let failedMsg = failedTest.failureMessages.join('\n').replace(/\u001b\[\d{1,2}m/gi, '');
-      return `
-  <details>
-    <summary>:x: ${failedTest.fullName}</summary>    
-    <table>
-      <tr>
-         <th>Title:</th>
-         <td><code>${failedTest.title}</code></td>
-      </tr>
-      <tr>
-         <th>Status:</th>
-         <td><code>${failedTest.status}</code></td>
-      </tr>
-      <tr>
-         <th>Location:</th>
-         <td><code>${failedTest.location}</code></td>
-      </tr>
-      <tr>
-        <th>Failure Messages:</th>
-        <td><pre>${failedMsg}</pre></td>
-      </tr>
-    </table>
-  </details>
-  `.trim();
+      return `<details>
+  <summary>:x: ${failedTest.fullName}</summary>
+  <table>
+    <tr>
+      <th>Title:</th>
+      <td><code>${failedTest.title}</code></td>
+    </tr>
+    <tr>
+      <th>Status:</th>
+      <td><code>${failedTest.status}</code></td>
+    </tr>
+    <tr>
+      <th>Location:</th>
+      <td><code>${failedTest.location}</code></td>
+    </tr>
+    <tr>
+      <th>Failure Messages:</th>
+      <td><pre>${failedMsg}</pre></td>
+    </tr>
+  </table>
+</details>
+`;
     }
     module2.exports = {
       getMarkupForJson: getMarkupForJson2
@@ -19761,7 +19797,7 @@ var require_markup = __commonJS({
 
 // src/main.js
 var core = require_core();
-var { readJsonResultsFromFile, areThereAnyFailingTests } = require_utils2();
+var { readJsonResultsFromFile, areThereAnyFailingTests, createResultsFile } = require_utils2();
 var { createStatusCheck, createPrComment } = require_github2();
 var { getMarkupForJson } = require_markup();
 var requiredArgOptions = {
@@ -19775,6 +19811,8 @@ var shouldCreateStatusCheck = core.getBooleanInput('create-status-check');
 var shouldCreatePRComment = core.getBooleanInput('create-pr-comment');
 var updateCommentIfOneExists = core.getBooleanInput('update-comment-if-one-exists');
 var reportName = core.getInput('report-name');
+var jobAndStep = `${process.env.GITHUB_JOB}_${process.env.GITHUB_ACTION}`;
+var commentIdentifier = core.getInput('comment-identifier') || jobAndStep;
 async function run() {
   try {
     const resultsJson = await readJsonResultsFromFile(resultsFile);
@@ -19783,18 +19821,38 @@ async function run() {
       return;
     }
     const failingTestsFound = areThereAnyFailingTests(resultsJson);
+    core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
     const markupData = getMarkupForJson(resultsJson, reportName);
-    let conclusion = 'success';
-    if (!resultsJson.success) {
-      conclusion = ignoreTestFailures ? 'neutral' : 'failure';
-    }
     if (shouldCreateStatusCheck) {
-      await createStatusCheck(token, markupData, conclusion, reportName);
+      let conclusion = 'success';
+      if (!resultsJson.success) {
+        conclusion = ignoreTestFailures ? 'neutral' : 'failure';
+      }
+      const checkId = await createStatusCheck(token, markupData, conclusion, reportName);
+      core.setOutput('status-check-id', checkId);
     }
     if (shouldCreatePRComment) {
-      await createPrComment(token, markupData, updateCommentIfOneExists);
+      core.info(`
+Creating a PR comment with length ${markupData.length}...`);
+      const characterLimit = 65535;
+      let truncated = false;
+      let mdForComment = markupData;
+      if (mdForComment.length > characterLimit) {
+        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${mdForComment.length}/${characterLimit}`;
+        core.info(message);
+        truncated = true;
+        const truncatedMessage = `> [!Important]
+> Test results truncated due to character limit.  See full report in output.
+`;
+        mdForComment = `${truncatedMessage}
+${mdForComment.substring(0, characterLimit - 100)}`;
+      }
+      core.setOutput('test-results-truncated', truncated);
+      const commentId = await createPrComment(token, mdForComment, updateCommentIfOneExists, commentIdentifier);
+      core.setOutput('pr-comment-id', commentId);
     }
-    core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
+    const resultsFilePath = createResultsFile(markupData, jobAndStep);
+    core.setOutput('test-results-file-path', resultsFilePath);
   } catch (error) {
     if (error instanceof RangeError) {
       core.info(error.message);
