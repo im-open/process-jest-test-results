@@ -115,7 +115,7 @@ jobs:
       - name: Process jest results with default
         if: always()
         # You may also reference just the major or major.minor version
-        uses: im-open/process-jest-test-results@v2.2.0
+        uses: im-open/process-jest-test-results@v2.2.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-file: 'src/ProjectWithJestTests/jest-results.json
@@ -137,7 +137,7 @@ jobs:
       
       - name: Process jest results
         id: process-jest
-        uses: im-open/process-jest-test-results@v2.2.0
+        uses: im-open/process-jest-test-results@v2.2.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-file: 'jest.json'
