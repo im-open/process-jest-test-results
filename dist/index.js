@@ -19823,32 +19823,34 @@ async function run() {
     const failingTestsFound = areThereAnyFailingTests(resultsJson);
     core.setOutput('test-outcome', failingTestsFound ? 'Failed' : 'Passed');
     const markupData = getMarkupForJson(resultsJson, reportName);
-    if (shouldCreateStatusCheck) {
-      let conclusion = 'success';
-      if (!resultsJson.success) {
-        conclusion = ignoreTestFailures ? 'neutral' : 'failure';
-      }
-      const checkId = await createStatusCheck(token, markupData, conclusion, reportName);
-      core.setOutput('status-check-id', checkId);
-    }
-    if (shouldCreatePRComment) {
-      core.info(`
-Creating a PR comment with length ${markupData.length}...`);
-      const characterLimit = 65535;
-      let truncated = false;
-      let mdForComment = markupData;
-      if (mdForComment.length > characterLimit) {
-        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${mdForComment.length}/${characterLimit}`;
+    const characterLimit = 65535;
+    let truncated = false;
+    let mdData = markupData;
+    if (shouldCreatePRComment || shouldCreateStatusCheck) {
+      if (mdData.length > characterLimit) {
+        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${mdData.length}/${characterLimit}`;
         core.info(message);
         truncated = true;
         const truncatedMessage = `> [!Important]
 > Test results truncated due to character limit.  See full report in output.
 `;
-        mdForComment = `${truncatedMessage}
-${mdForComment.substring(0, characterLimit - 100)}`;
+        mdData = `${truncatedMessage}
+${mdData.substring(0, characterLimit - 100)}`;
       }
       core.setOutput('test-results-truncated', truncated);
-      const commentId = await createPrComment(token, mdForComment, updateCommentIfOneExists, commentIdentifier);
+    }
+    if (shouldCreateStatusCheck) {
+      let conclusion = 'success';
+      if (!resultsJson.success) {
+        conclusion = ignoreTestFailures ? 'neutral' : 'failure';
+      }
+      const checkId = await createStatusCheck(token, mdData, conclusion, reportName);
+      core.setOutput('status-check-id', checkId);
+    }
+    if (shouldCreatePRComment) {
+      core.info(`
+Creating a PR comment with length ${mdData.length}...`);
+      const commentId = await createPrComment(token, mdData, updateCommentIfOneExists, commentIdentifier);
       core.setOutput('pr-comment-id', commentId);
     }
     const resultsFilePath = createResultsFile(markupData, jobAndStep);

@@ -32,34 +32,35 @@ async function run() {
 
     const markupData = getMarkupForJson(resultsJson, reportName);
 
+    // GitHub API has a limit of 65535 characters for a comment so truncate the markup if we need to
+    const characterLimit = 65535;
+    let truncated = false;
+    let mdData = markupData;
+
+    if (shouldCreatePRComment || shouldCreateStatusCheck) {
+      if (mdData.length > characterLimit) {
+        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${mdData.length}/${characterLimit}`;
+        core.info(message);
+
+        truncated = true;
+        const truncatedMessage = `> [!Important]\n> Test results truncated due to character limit.  See full report in output.\n`;
+        mdData = `${truncatedMessage}\n${mdData.substring(0, characterLimit - 100)}`;
+      }
+      core.setOutput('test-results-truncated', truncated);
+    }
+
     if (shouldCreateStatusCheck) {
       let conclusion = 'success';
       if (!resultsJson.success) {
         conclusion = ignoreTestFailures ? 'neutral' : 'failure';
       }
-      const checkId = await createStatusCheck(token, markupData, conclusion, reportName);
+      const checkId = await createStatusCheck(token, mdData, conclusion, reportName);
       core.setOutput('status-check-id', checkId); // This is mainly for testing purposes
     }
 
     if (shouldCreatePRComment) {
-      core.info(`\nCreating a PR comment with length ${markupData.length}...`);
-
-      // GitHub API has a limit of 65535 characters for a comment so truncate the markup if we need to
-      const characterLimit = 65535;
-      let truncated = false;
-      let mdForComment = markupData;
-
-      if (mdForComment.length > characterLimit) {
-        const message = `Truncating markup data due to character limit exceeded for GitHub API.  Markup data length: ${mdForComment.length}/${characterLimit}`;
-        core.info(message);
-
-        truncated = true;
-        const truncatedMessage = `> [!Important]\n> Test results truncated due to character limit.  See full report in output.\n`;
-        mdForComment = `${truncatedMessage}\n${mdForComment.substring(0, characterLimit - 100)}`;
-      }
-      core.setOutput('test-results-truncated', truncated);
-
-      const commentId = await createPrComment(token, mdForComment, updateCommentIfOneExists, commentIdentifier);
+      core.info(`\nCreating a PR comment with length ${mdData.length}...`);
+      const commentId = await createPrComment(token, mdData, updateCommentIfOneExists, commentIdentifier);
       core.setOutput('pr-comment-id', commentId); // This is mainly for testing purposes
     }
 
