@@ -19,7 +19,7 @@
     "date-fns-tz": "^1.1.4"
   },
   "devDependencies": {
-    "esbuild": "^0.12.8",
+    "esbuild": "^0.25.0",
     "install": "^0.13.0",
     "prettier": "^2.3.0"
   }
