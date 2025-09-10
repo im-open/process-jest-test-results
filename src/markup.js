@@ -146,8 +146,8 @@ There were no test results to report.
 function getFailedTestMarkup(failedTest) {
   core.debug(`Processing ${failedTest.fullName}`);
 
-  //Replace an escaped unicode "escape character".  It doesn't show correctly in markdown.
-  let failedMsg = failedTest.failureMessages.join('\n').replace(/\u001b\[\d{1,2}m/gi, '');
+  // Replace an escaped unicode "escape character". It doesn't show correctly in markdown.
+  let failedMsg = failedTest.failureMessages.join('\n').replace(/^.*\u001b\[\d{1,2}m.*$/gi, '');
   return `<details>
   <summary>:x: ${failedTest.fullName}</summary>
   <table>

@@ -4,19 +4,23 @@ const path = require('path');
 
 async function readJsonResultsFromFile(resultsFile) {
   core.info('Reading results from jest results file....');
-  if (fs.existsSync(resultsFile)) {
-    const rawJson = fs.readFileSync(resultsFile, 'utf8');
-    if (!rawJson) {
-      core.info(
-        `The results file '${resultsFile}' does not contain any data.  No status check or PR comment will be created.`
-      );
-      return;
+  let rawJson;
+  try {
+    rawJson = fs.readFileSync(resultsFile, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      core.setFailed(`The results file '${resultsFile}' does not exist. No status check or PR comment will be created.`);
+    } else {
+      core.setFailed(`An error occurred: ${err}. No status check or PR comment will be created.`)
     }
-    return JSON.parse(rawJson);
-  } else {
-    core.setFailed(`The results file '${resultsFile}' does not exist.  No status check or PR comment will be created.`);
     return;
   }
+  if (rawJson) {
+    return JSON.parse(rawJson);
+  }
+  core.info(
+    `The results file '${resultsFile}' does not contain any data. No status check or PR comment will be created.`
+  );
 }
 
 function areThereAnyFailingTests(json) {
