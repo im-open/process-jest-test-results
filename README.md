@@ -105,7 +105,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: jest test with Coverage
         continue-on-error: true
@@ -115,7 +115,7 @@ jobs:
       - name: Process jest results with default
         if: always()
         # You may also reference just the major or major.minor version
-        uses: im-open/process-jest-test-results@v3.0.0
+        uses: im-open/process-jest-test-results@v4.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-file: 'src/ProjectWithJestTests/jest-results.json
@@ -128,7 +128,7 @@ jobs:
   advanced-ci:
     runs-on: [ubuntu-20.04]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: jest test with results file
         continue-on-error: true
@@ -137,7 +137,7 @@ jobs:
       
       - name: Process jest results
         id: process-jest
-        uses: im-open/process-jest-test-results@v3.0.0
+        uses: im-open/process-jest-test-results@v4.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           results-file: 'jest.json'

@@ -13,14 +13,18 @@
   "author": "wtw",
   "license": "ISC",
   "dependencies": {
-    "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.1",
+    "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0"
   },
   "devDependencies": {
-    "esbuild": "^0.25.9",
+    "esbuild": "^0.28.1",
     "install": "^0.13.0",
     "prettier": "^3.6.2"
+  },
+  "overrides": {
+      "undici": "^8.5.0",
+      "json-with-bigint": "^3.5.8"
   }
 }
