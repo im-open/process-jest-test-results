@@ -1,8 +1,8 @@
-const core = require('@actions/core');
-const { format, toZonedTime } = require('date-fns-tz');
-const timezone = core.getInput('timezone') || 'Etc/UTC';
+import { getInput, debug } from '@actions/core';
+import { format, toZonedTime } from 'date-fns-tz';
+const timezone = getInput('timezone') || 'Etc/UTC';
 
-function getMarkupForJson(results, reportName) {
+export default function getMarkupForJson(results, reportName) {
   return `# ${reportName}
 
 ${getBadge(results)}
@@ -144,7 +144,7 @@ There were no test results to report.
 }
 
 function getFailedTestMarkup(failedTest) {
-  core.debug(`Processing ${failedTest.fullName}`);
+  debug(`Processing ${failedTest.fullName}`);
 
   // Replace an escaped unicode "escape character". It doesn't show correctly in markdown.
   let failedMsg = failedTest.failureMessages.join('\n').replace(/\u001b\[\d{1,2}m/gi, '');
@@ -171,7 +171,3 @@ function getFailedTestMarkup(failedTest) {
 </details>
 `;
 }
-
-module.exports = {
-  getMarkupForJson
-};

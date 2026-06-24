@@ -29,9 +29,12 @@ on:
   #   if this action should be incremented and if new tags should be pushed to the repo based
   #   on the same criteria used in the build-and-review-pr.yml workflow.
 
+permissions:
+  contents: write
+
 jobs:
   increment-version:
-    uses: im-open/.github/.github/workflows/reusable-increment-version-on-merge.yml@v1
+    uses: im-open/.github/.github/workflows/reusable-increment-version-on-merge.yml@v2
     with:
       default-branch: main
 

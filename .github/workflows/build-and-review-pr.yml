@@ -28,6 +28,11 @@ env:
   PASSING_JSON_RESULTS_FILE: './test/input-files/passing.json'
   TRUNCATE_JSON_RESULTS_FILE: './test/input-files/truncate.json'
 
+permissions:
+  checks: write
+  contents: write
+  pull-requests: write
+
 jobs:
   build-and-review-pr:
     # This reusable workflow will check to see if an action's source code has changed based on
@@ -41,7 +46,7 @@ jobs:
     # This workflow assumes:
     #  - The main README.md is at the root of the repo
     #  - The README contains a contribution guidelines and usage examples section
-    uses: im-open/.github/.github/workflows/reusable-build-and-review-pr.yml@v1
+    uses: im-open/.github/.github/workflows/reusable-build-and-review-pr.yml@v2
     with:
       action-name: ${{ github.repository }}
       default-branch: main
@@ -82,7 +87,7 @@ jobs:
         run: echo ""
 
       - name: Setup - Checkout the action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
@@ -382,7 +387,7 @@ jobs:
           fi
 
       - name: Setup - Checkout the action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: '-------------------------------------------------------------------------------------------------------------'
         run: echo ""
@@ -414,7 +419,7 @@ jobs:
 
       - name: 8 - And the status check should match the inputs
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -465,7 +470,7 @@ jobs:
 
       - name: 9 - And the status check should match the inputs
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -516,7 +521,7 @@ jobs:
 
       - name: 10 - And the status check should match the inputs
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -543,7 +548,7 @@ jobs:
 
       - name: Teardown - Modify failing Status Check conclusion
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -585,11 +590,11 @@ jobs:
           fi
 
       - name: Setup - Checkout the action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup - Delete pre-existing process-jest-test-results PR Comments
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const deletePrComments = require('./test/delete-pre-existing-comments.js');
@@ -597,7 +602,7 @@ jobs:
 
       - name: Setup - Create a process-jest-test-results comment that can be updated
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             await github.rest.issues.createComment({
@@ -647,7 +652,7 @@ jobs:
 
       - name: 11 - And the pr-comment should match the match the expected values
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -700,7 +705,7 @@ jobs:
 
       - name: 12 - And the pr-comment should match the expected values
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -752,7 +757,7 @@ jobs:
 
       - name: 13 - And the pr-comment should match the expected values
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -805,7 +810,7 @@ jobs:
 
       - name: 14 - And the pr-comment should match the expected values
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -836,7 +841,7 @@ jobs:
 
       - name: Teardown - Delete PR Comments
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
